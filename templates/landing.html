@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="landing-container">
+        <header>
+            <h1>🏥 Personalized Medical Recommendation System</h1>
+            <p class="tagline">AI-Powered Health Insights for Better Living</p>
+        </header>
+        
+        <section class="hero">
+            <div class="hero-content">
+                <h2>Your Health, Our Priority</h2>
+                <p>Get personalized medical recommendations using advanced machine learning models</p>
+                
+                <div class="features">
+                    <div class="feature-box">
+                        <h3>🤖 Multiple AI Models</h3>
+                        <p>SVC, Random Forest, CNN, RBM</p>
+                    </div>
+                    <div class="feature-box">
+                        <h3>📊 Data-Driven</h3>
+                        <p>Accurate predictions based on your health data</p>
+                    </div>
+                    <div class="feature-box">
+                        <h3>🔒 Secure</h3>
+                        <p>Your medical data is safe and encrypted</p>
+                    </div>
+                </div>
+                
+                <div class="cta-buttons">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-secondary">Sign Up</a>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>&copy; 2025 Medical Recommendation System. For educational purposes only.</p>
+        </footer>
+    </div>
+</body>
+</html>

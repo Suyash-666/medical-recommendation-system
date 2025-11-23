@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('predict') }}" class="active">New Prediction</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            <div class="predict-container">
+                <h2>Get Medical Prediction</h2>
+                <p class="subtitle">Enter your health data to receive personalized recommendations</p>
+                
+                <form method="POST" action="{{ url_for('predict') }}" class="predict-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="age">Age *</label>
+                            <input type="number" id="age" name="age" min="1" max="120" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gender">Gender *</label>
+                            <select id="gender" name="gender" required>
+                                <option value="">Select...</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="heart_rate">Heart Rate (bpm) *</label>
+                        <input type="number" id="heart_rate" name="heart_rate" min="40" max="200" required>
+                        <small>Normal: 60-100 bpm</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="symptoms">Symptoms *</label>
+                        <textarea id="symptoms" name="symptoms" rows="4" placeholder="Describe your symptoms in detail (e.g., vomiting, fever, stomach pain)..." required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">Get Prediction</button>
+                </form>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

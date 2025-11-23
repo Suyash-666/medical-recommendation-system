@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('predict') }}">New Prediction</a>
+                <a href="{{ url_for('history') }}" class="active">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            <h2>Your Medical History</h2>
+            
+            {% if history %}
+                <div class="history-grid">
+                    {% for record in history %}
+                    <div class="history-card">
+                        <div class="history-header">
+                            <span class="date">{{ record.created_at.strftime('%B %d, %Y') }}</span>
+                            {% if record.prediction %}
+                                <span class="status-badge status-{{ record.prediction.lower() }}">
+                                    {{ record.prediction }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="history-body">
+                            <div class="health-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Age:</span>
+                                    <span class="metric-value">{{ record.age }}</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Gender:</span>
+                                    <span class="metric-value">{{ record.gender }}</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Heart Rate:</span>
+                                    <span class="metric-value">{{ record.heart_rate }} bpm</span>
+                                </div>
+                            </div>
+                            
+                            {% if record.model_used %}
+                            <div class="model-info-small">
+                                <strong>Model:</strong> {{ record.model_used.upper() }} 
+                                {% if record.confidence %}
+                                    | <strong>Confidence:</strong> {{ (record.confidence * 100)|round(2) }}%
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if record.symptoms %}
+                            <div class="symptoms">
+                                <strong>Symptoms:</strong> {{ record.symptoms }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <p>No medical history found.</p>
+                    <a href="{{ url_for('predict') }}" class="btn btn-primary">Create Your First Prediction</a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>

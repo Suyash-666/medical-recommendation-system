@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <span>Welcome, {{ username }}!</span>
+                <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+                <a href="{{ url_for('predict') }}">New Prediction</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <section class="quick-actions">
+                <h2>Quick Actions</h2>
+                <div class="action-cards">
+                    <a href="{{ url_for('predict') }}" class="action-card">
+                        <h3>📝 New Prediction</h3>
+                        <p>Get personalized health recommendations</p>
+                    </a>
+                    <a href="{{ url_for('history') }}" class="action-card">
+                        <h3>📊 View History</h3>
+                        <p>See your past predictions and trends</p>
+                    </a>
+                </div>
+            </section>
+            
+            <section class="recent-records">
+                <h2>Recent Medical Records</h2>
+                {% if records %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Heart Rate</th>
+                                <th>Symptoms</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td>{{ record.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ record.age }}</td>
+                                <td>{{ record.gender }}</td>
+                                <td>{{ record.heart_rate }} bpm</td>
+                                <td>{{ record.symptoms[:50] }}...</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="no-data">No medical records yet. <a href="{{ url_for('predict') }}">Create your first prediction!</a></p>
+                {% endif %}
+            </section>
+            
+            <section class="info-section">
+                <h2>About Our AI Models</h2>
+                <div class="model-info">
+                    <div class="model-card">
+                        <h3>SVC (Support Vector Classifier)</h3>
+                        <p>Uses kernel methods for classification with high accuracy</p>
+                    </div>
+                    <div class="model-card">
+                        <h3>Random Forest</h3>
+                        <p>Ensemble learning method for robust predictions</p>
+                    </div>
+                    <div class="model-card">
+                        <h3>CNN (Convolutional Neural Network)</h3>
+                        <p>Deep learning approach for pattern recognition</p>
+                    </div>
+                    <div class="model-card">
+                        <h3>RBM (Restricted Boltzmann Machine)</h3>
+                        <p>Neural network for feature extraction and prediction</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('predict') }}">New Prediction</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            <div class="result-container">
+                <h2>Your Medical Prediction Result</h2>
+                
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3>Health Status Summary: <span class="status-{{ prediction.lower().replace(' ', '-') }}">{{ disease }}</span></h3>
+                    </div>
+                    
+                    <div class="result-body">
+                        <div class="result-section">
+                            <h4>📋 Description</h4>
+                            <p class="description-text">{{ description }}</p>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h4>🛡️ Precautions</h4>
+                            <ul class="recommendations-list">
+                                {% for precaution in precautions %}
+                                    <li>{{ precaution }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h4>💊 Medications</h4>
+                            <ul class="recommendations-list">
+                                {% for medication in medications %}
+                                    <li>{{ medication }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h4>🥗 Diets</h4>
+                            <ul class="recommendations-list">
+                                {% for diet_item in diet %}
+                                    <li>{{ diet_item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="result-footer">
+                        <p class="disclaimer" style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; border-radius: 4px;">
+                            ⚠️ <strong>Medical Disclaimer:</strong> This is an AI-based suggestion system, not a medical diagnosis. Always consult a qualified healthcare professional for proper diagnosis and treatment.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{{ url_for('predict') }}" class="btn btn-primary">New Prediction</a>
+                    <a href="{{ url_for('history') }}" class="btn btn-secondary">View History</a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
