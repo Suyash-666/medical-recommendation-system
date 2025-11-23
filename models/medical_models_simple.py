@@ -3,14 +3,12 @@ Simplified Medical Prediction Models (Quick Start Version)
 Implements basic prediction logic without heavy ML dependencies
 """
 import numpy as np
-import pickle
-import os
 
 class MedicalPredictor:
     """Simplified medical predictor for quick demo"""
     
     def __init__(self):
-        print("✓ Medical predictor initialized (simplified mode)")
+        # Simplified predictor ready
         self.trained = True
     
     def _analyze_health(self, features, symptoms=""):

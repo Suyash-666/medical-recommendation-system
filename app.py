@@ -1,11 +1,10 @@
 """
 Medical Recommendation System - Flask Web Application
-Main application with routes for landing, login, signup, dashboard, and predictions
+Main application with essential routes for landing, auth, dashboard, and predictions
 """
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import json
 import os
 from dotenv import load_dotenv
 from database.db_config import init_firebase, get_db
@@ -22,17 +21,13 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-me')
 
 # Initialize Firebase and medical predictor
 USE_FIREBASE = False
+DEMO_USERS = {}
+DEMO_RECORDS = []
+DEMO_RECOMMENDATIONS = []
 try:
     db = init_firebase()
     if db:
-        print("✓ Firebase initialized successfully!")
         USE_FIREBASE = True
-    else:
-        print("✓ Running in DEMO MODE (in-memory database)")
-        # In-memory storage for demo
-        DEMO_USERS = {}
-        DEMO_RECORDS = []
-        DEMO_RECOMMENDATIONS = []
 except Exception as e:
     print(f"✗ Firebase initialization error: {e}")
     print("✓ Falling back to DEMO MODE")
@@ -44,7 +39,7 @@ except Exception as e:
 predictor = MedicalPredictor()
 
 def get_db_connection():
-    """Get Firestore database connection"""
+    """Get Firestore database connection or None"""
     return get_db()
 
 @app.route('/')
@@ -58,28 +53,35 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
-        try:
-            db = get_db_connection()
-            users_ref = db.collection('users')
-            query = users_ref.where('username', '==', username).limit(1)
-            users = query.stream()
-            
-            user = None
-            for doc in users:
-                user = doc.to_dict()
-                user['id'] = doc.id
-                break
-            
+        db = get_db_connection()
+        if USE_FIREBASE and db:
+            try:
+                users_ref = db.collection('users')
+                query = users_ref.where('username', '==', username).limit(1)
+                users = query.stream()
+                user = None
+                for doc in users:
+                    user = doc.to_dict()
+                    user['id'] = doc.id
+                    break
+                if user and check_password_hash(user['password'], password):
+                    session['user_id'] = user['id']
+                    session['username'] = user['username']
+                    flash('Login successful!', 'success')
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash('Invalid username or password', 'error')
+            except Exception as e:
+                flash(f'Database error: {str(e)}', 'error')
+        else:
+            # Demo mode auth
+            user = DEMO_USERS.get(username)
             if user and check_password_hash(user['password'], password):
-                session['user_id'] = user['id']
-                session['username'] = user['username']
-                flash('Login successful!', 'success')
+                session['user_id'] = username
+                session['username'] = username
+                flash('Login successful! (Demo)', 'success')
                 return redirect(url_for('dashboard'))
-            else:
-                flash('Invalid username or password', 'error')
-        except Exception as e:
-            flash(f'Database error: {str(e)}', 'error')
+            flash('Invalid username or password', 'error')
     
     return render_template('login.html')
 
@@ -92,30 +94,36 @@ def signup():
         password = request.form.get('password')
         
         hashed_password = generate_password_hash(password)
-        
-        try:
-            db = get_db_connection()
-            
-            # Check if username already exists
-            users_ref = db.collection('users')
-            existing = users_ref.where('username', '==', username).limit(1).stream()
-            if any(existing):
+        db = get_db_connection()
+        if USE_FIREBASE and db:
+            try:
+                users_ref = db.collection('users')
+                existing = users_ref.where('username', '==', username).limit(1).stream()
+                if any(existing):
+                    flash('Username already exists', 'error')
+                    return render_template('signup.html')
+                user_data = {
+                    'username': username,
+                    'email': email,
+                    'password': hashed_password,
+                    'created_at': datetime.now()
+                }
+                users_ref.add(user_data)
+                flash('Account created successfully! Please login.', 'success')
+                return redirect(url_for('login'))
+            except Exception as e:
+                flash(f'Error: {str(e)}', 'error')
+        else:
+            if username in DEMO_USERS:
                 flash('Username already exists', 'error')
-                return render_template('signup.html')
-            
-            # Create new user
-            user_data = {
-                'username': username,
-                'email': email,
-                'password': hashed_password,
-                'created_at': datetime.now()
-            }
-            users_ref.add(user_data)
-            
-            flash('Account created successfully! Please login.', 'success')
-            return redirect(url_for('login'))
-        except Exception as e:
-            flash(f'Error: {str(e)}', 'error')
+            else:
+                DEMO_USERS[username] = {
+                    'email': email,
+                    'password': hashed_password,
+                    'created_at': datetime.now()
+                }
+                flash('Account created! (Demo) Please login.', 'success')
+                return redirect(url_for('login'))
     
     return render_template('signup.html')
 
@@ -129,18 +137,20 @@ def dashboard():
     # Get user's recent records
     recent_records = []
     
-    try:
-        db = get_db_connection()
-        records_ref = db.collection('medical_records')
-        query = records_ref.where('user_id', '==', session['user_id']).order_by('created_at', direction='DESCENDING').limit(5)
-        docs = query.stream()
-        
-        for doc in docs:
-            record = doc.to_dict()
-            record['id'] = doc.id
-            recent_records.append(record)
-    except Exception as e:
-        print(f"Error fetching records: {e}")
+    db = get_db_connection()
+    if USE_FIREBASE and db:
+        try:
+            records_ref = db.collection('medical_records')
+            query = records_ref.where('user_id', '==', session['user_id']).order_by('created_at', direction='DESCENDING').limit(5)
+            docs = query.stream()
+            for doc in docs:
+                record = doc.to_dict()
+                record['id'] = doc.id
+                recent_records.append(record)
+        except Exception as e:
+            print(f"Error fetching records: {e}")
+    else:
+        recent_records = [r for r in DEMO_RECORDS if r['user_id'] == session['user_id']][-5:]
     
     return render_template('dashboard.html', username=session['username'], records=recent_records)
 
@@ -186,35 +196,51 @@ def predict():
         recommendation_data = predictor.get_recommendation(prediction, confidence, symptoms, all_conditions)
         
         # Save to database
-        try:
-            db = get_db_connection()
-            
-            # Insert medical record
-            record_data = {
+        db = get_db_connection()
+        if USE_FIREBASE and db:
+            try:
+                record_data = {
+                    'user_id': session['user_id'],
+                    'age': age,
+                    'gender': gender,
+                    'heart_rate': heart_rate,
+                    'symptoms': symptoms,
+                    'created_at': datetime.now()
+                }
+                record_ref = db.collection('medical_records').add(record_data)
+                record_id = record_ref[1].id
+                recommendation = {
+                    'user_id': session['user_id'],
+                    'record_id': record_id,
+                    'model_used': 'Ensemble (All 4 Models)',
+                    'prediction': recommendation_data['status'],
+                    'confidence': confidence,
+                    'recommendations': recommendation_data['diet'] + recommendation_data['precautions'],
+                    'created_at': datetime.now()
+                }
+                db.collection('recommendations').add(recommendation)
+            except Exception as e:
+                print(f"Database error: {e}")
+        else:
+            record_id = len(DEMO_RECORDS) + 1
+            DEMO_RECORDS.append({
+                'id': record_id,
                 'user_id': session['user_id'],
                 'age': age,
                 'gender': gender,
                 'heart_rate': heart_rate,
                 'symptoms': symptoms,
                 'created_at': datetime.now()
-            }
-            record_ref = db.collection('medical_records').add(record_data)
-            record_id = record_ref[1].id
-            
-            # Insert recommendation
-            recommendation = {
+            })
+            DEMO_RECOMMENDATIONS.append({
                 'user_id': session['user_id'],
                 'record_id': record_id,
-                'model_used': 'Ensemble (All 4 Models)',
+                'model_used': 'Ensemble (Demo)',
                 'prediction': recommendation_data['status'],
                 'confidence': confidence,
                 'recommendations': recommendation_data['diet'] + recommendation_data['precautions'],
                 'created_at': datetime.now()
-            }
-            db.collection('recommendations').add(recommendation)
-            
-        except Exception as e:
-            print(f"Database error: {e}")
+            })
         
         return render_template('result.html', 
                              prediction=recommendation_data['status'],
@@ -236,32 +262,41 @@ def history():
     
     history_data = []
     
-    try:
-        db = get_db_connection()
-        
-        # Get medical records
-        records_ref = db.collection('medical_records')
-        query = records_ref.where('user_id', '==', session['user_id']).order_by('created_at', direction='DESCENDING')
-        records = query.stream()
-        
-        for record_doc in records:
-            record = record_doc.to_dict()
-            record['id'] = record_doc.id
-            
-            # Get corresponding recommendation
-            rec_query = db.collection('recommendations').where('record_id', '==', record_doc.id).limit(1)
-            rec_docs = rec_query.stream()
-            
-            for rec_doc in rec_docs:
-                rec = rec_doc.to_dict()
-                record['model_used'] = rec.get('model_used')
-                record['prediction'] = rec.get('prediction')
-                record['confidence'] = rec.get('confidence')
-                break
-            
-            history_data.append(record)
-    except Exception as e:
-        print(f"Error fetching history: {e}")
+    db = get_db_connection()
+    if USE_FIREBASE and db:
+        try:
+            records_ref = db.collection('medical_records')
+            query = records_ref.where('user_id', '==', session['user_id']).order_by('created_at', direction='DESCENDING')
+            records = query.stream()
+            for record_doc in records:
+                record = record_doc.to_dict()
+                record['id'] = record_doc.id
+                rec_query = db.collection('recommendations').where('record_id', '==', record_doc.id).limit(1)
+                rec_docs = rec_query.stream()
+                for rec_doc in rec_docs:
+                    rec = rec_doc.to_dict()
+                    record['model_used'] = rec.get('model_used')
+                    record['prediction'] = rec.get('prediction')
+                    record['confidence'] = rec.get('confidence')
+                    break
+                history_data.append(record)
+        except Exception as e:
+            print(f"Error fetching history: {e}")
+    else:
+        for r in DEMO_RECORDS[::-1]:
+            if r['user_id'] == session['user_id']:
+                rec = next((rec for rec in DEMO_RECOMMENDATIONS if rec['record_id'] == r['id']), None)
+                history_data.append({
+                    'id': r['id'],
+                    'age': r['age'],
+                    'gender': r['gender'],
+                    'heart_rate': r['heart_rate'],
+                    'symptoms': r['symptoms'],
+                    'created_at': r['created_at'],
+                    'model_used': rec.get('model_used') if rec else 'N/A',
+                    'prediction': rec.get('prediction') if rec else 'N/A',
+                    'confidence': rec.get('confidence') if rec else 0
+                })
     
     return render_template('history.html', history=history_data)
 
@@ -273,10 +308,5 @@ def logout():
     return redirect(url_for('landing'))
 
 if __name__ == '__main__':
-    print("\n" + "="*50)
-    print("🏥 Medical Recommendation System")
-    print("="*50)
-    print("✓ Server starting at: http://127.0.0.1:5000")
-    print("✓ Press Ctrl+C to stop the server")
-    print("="*50 + "\n")
+    print("Starting server: http://127.0.0.1:5000")
     app.run(debug=False, port=5000, use_reloader=False)
