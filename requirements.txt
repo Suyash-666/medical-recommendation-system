@@ -4,3 +4,4 @@ numpy==1.24.3
 Werkzeug==2.3.7
 gunicorn==21.2.0
 python-dotenv==1.0.1
+vercel-wsgi==0.9.1
