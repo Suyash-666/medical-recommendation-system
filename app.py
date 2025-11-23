@@ -6,12 +6,19 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import json
+import os
+from dotenv import load_dotenv
 from database.db_config import init_firebase, get_db
 from models.medical_models_simple import MedicalPredictor
 
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this'  # Change this in production
+
+# Load environment variables from .env (local dev) if present
+load_dotenv()
+
+# Secret key should come from environment; fallback only for dev
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-me')
 
 # Initialize Firebase and medical predictor
 USE_FIREBASE = False
