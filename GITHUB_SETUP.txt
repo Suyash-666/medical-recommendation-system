@@ -1,0 +1,55 @@
+🚀 QUICK GITHUB SETUP GUIDE
+================================
+
+STEP 1: Create GitHub Repository
+---------------------------------
+1. Go to: https://github.com/new
+2. Repository name: medical-recommendation-system
+3. Description: AI-powered medical recommendation system using Flask and ML
+4. Visibility: Public (or Private if you prefer)
+5. ❌ DO NOT check "Add a README file"
+6. ❌ DO NOT add .gitignore (we already have one)
+7. Click "Create repository"
+
+STEP 2: Copy Your Repository URL
+---------------------------------
+After creating, you'll see a URL like:
+https://github.com/YOUR_USERNAME/medical-recommendation-system.git
+
+Copy this URL!
+
+STEP 3: Push to GitHub
+---------------------------------
+Run these commands in PowerShell (in C:\WebPython directory):
+
+# Set your repository URL (replace YOUR_USERNAME with your GitHub username)
+git remote add origin https://github.com/YOUR_USERNAME/medical-recommendation-system.git
+
+# Rename branch to main
+git branch -M main
+
+# Push to GitHub
+git push -u origin main
+
+You may be prompted to login to GitHub - use your credentials or Personal Access Token.
+
+STEP 4: Verify
+---------------------------------
+Go to your GitHub repository URL and you should see all your files!
+
+🔒 SECURITY CHECK
+---------------------------------
+✅ firebase-credentials.json is NOT uploaded (check .gitignore)
+✅ All sensitive files are excluded
+✅ Only source code is public
+
+📝 NEXT: DEPLOY TO WEB
+---------------------------------
+See DEPLOYMENT.md for deploying to:
+- Render (easiest, free)
+- Heroku (popular)
+- Railway (modern)
+- PythonAnywhere (Python-specific)
+
+🎉 YOU'RE READY!
+---------------------------------
