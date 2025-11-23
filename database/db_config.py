@@ -1,9 +1,10 @@
 """
-Firebase configuration
+Firebase configuration with environment variable support
 """
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
+import json
 
 # Initialize Firebase (will be called from app.py)
 def init_firebase():
@@ -12,22 +13,28 @@ def init_firebase():
         # If already initialized, return existing app
         firebase_admin.get_app()
     except ValueError:
-        # Try to initialize with credentials file if it exists
-        cred_file = 'firebase-credentials.json'
+        # Option 1: Use environment variable (for deployment platforms)
+        if os.environ.get('FIREBASE_CREDENTIALS'):
+            try:
+                cred_dict = json.loads(os.environ.get('FIREBASE_CREDENTIALS'))
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                print("✓ Firebase initialized from environment variable")
+            except Exception as e:
+                print(f"⚠️  Error loading Firebase from environment: {e}")
+                return None
         
-        if os.path.exists(cred_file):
-            # Use service account credentials
-            cred = credentials.Certificate(cred_file)
+        # Option 2: Use local credentials file
+        elif os.path.exists('firebase-credentials.json'):
+            cred = credentials.Certificate('firebase-credentials.json')
             firebase_admin.initialize_app(cred)
+            print("✓ Firebase initialized from local credentials file")
+        
+        # Option 3: Demo mode
         else:
-            # For demo: use mock/in-memory mode
-            # In production, you MUST use real Firebase credentials
             print("⚠️  WARNING: Running in DEMO MODE without Firebase!")
-            print("   To use real Firebase:")
-            print("   1. Download service account key from Firebase Console")
-            print("   2. Save as 'firebase-credentials.json' in project root")
-            print("   3. Restart the application")
-            print("")
+            print("   For deployment, set FIREBASE_CREDENTIALS environment variable")
+            print("   For local development, add firebase-credentials.json")
             return None
     
     return firestore.client()
