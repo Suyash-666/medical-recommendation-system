@@ -2,6 +2,46 @@
 
 AI-powered health assessment and recommendation system with Firebase (optional) and demo fallback.
 
+## Important: Repository vs Deployed App
+Visiting the GitHub repository URL only shows this README. It does NOT run the Flask app. To get a live URL that serves the application you must deploy it to a runtime platform (Railway, Deta Space, Render, etc.). GitHub Pages, by itself, cannot run Python/Flask – it only serves static files.
+
+### Quick Free Deployment (Railway)
+1. Create account at https://railway.app
+2. Click New Project → Deploy from GitHub → select this repo.
+3. Set Build & Start:
+	- Build command: `pip install -r requirements.txt`
+	- Start command: `gunicorn app:app`
+4. Add environment variables:
+	- `FLASK_SECRET_KEY` = (generate a random string)
+	- `FIREBASE_CREDENTIALS` = paste JSON or use base64 (see below)
+5. Deploy → copy the generated Railway URL (this is the live app).
+
+### Alternative (Deta Space – no cost, simple)
+1. Sign up at https://deta.space
+2. Create a new Micro (Python) and upload project files.
+3. Add a `main.py` containing:
+	```python
+	from app import app
+	```
+4. Add environment variables (`FLASK_SECRET_KEY`, `FIREBASE_CREDENTIALS`).
+5. Deploy → copy the public URL.
+
+### Firebase Credentials Options
+Service account JSON (raw):
+```powershell
+$env:FIREBASE_CREDENTIALS = (Get-Content firebase-credentials.json -Raw)
+```
+Base64 (safer for multiline secrets):
+```powershell
+$raw = Get-Content firebase-credentials.json -Raw
+$env:FIREBASE_CREDENTIALS_B64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($raw))
+```
+Then platform-side set either `FIREBASE_CREDENTIALS` or `FIREBASE_CREDENTIALS_B64`.
+
+### Required Firestore Index
+After first login/dashboard access you may see an index warning. Create the composite index (user_id + created_at) using the link shown in the UI/banner, wait for build, then refresh.
+
+
 ## Deploy (Render - Easiest)
 1. Push code to GitHub
 2. Log in to https://render.com
@@ -27,6 +67,7 @@ Visit http://127.0.0.1:5000
 ## Environment Variables
 - `FLASK_SECRET_KEY` (auto-generated on Render if not set)
 - `FIREBASE_CREDENTIALS` (JSON service account; optional)
+ - `FIREBASE_CREDENTIALS_B64` (base64 version of JSON; overrides raw JSON if set)
 
 ## Production Notes
 - Use `gunicorn app:app` (handled by Render)
@@ -37,3 +78,4 @@ Visit http://127.0.0.1:5000
 - Add tests
 - Add API endpoints (`/api/predict`)
 - Harden auth (password reset, email verification)
+ - Convert Firestore queries to new `filter` API (remove warnings)
