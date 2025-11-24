@@ -150,19 +150,21 @@ def predict():
         # Prepare features for prediction (simplified to 2 features)
         features = [age, heart_rate]
         
-        # Run all 4 AI models and use ensemble prediction (hidden from user)
+        # Run all 4 AI models and collect their analysis
         predictions = []
         confidences = []
         all_conditions = []
+        algorithm_analyses = []
         
-        # Get predictions from all models
-        pred_svc, conf_svc, cond_svc = predictor.predict_svc(features, symptoms)
-        pred_rf, conf_rf, cond_rf = predictor.predict_random_forest(features, symptoms)
-        pred_cnn, conf_cnn, cond_cnn = predictor.predict_cnn(features, symptoms)
-        pred_rbm, conf_rbm, cond_rbm = predictor.predict_rbm(features, symptoms)
+        # Get predictions from all models with detailed analysis
+        pred_svc, conf_svc, cond_svc, analysis_svc = predictor.predict_svc(features, symptoms)
+        pred_rf, conf_rf, cond_rf, analysis_rf = predictor.predict_random_forest(features, symptoms)
+        pred_cnn, conf_cnn, cond_cnn, analysis_cnn = predictor.predict_cnn(features, symptoms)
+        pred_rbm, conf_rbm, cond_rbm, analysis_rbm = predictor.predict_rbm(features, symptoms)
         
         predictions = [pred_svc, pred_rf, pred_cnn, pred_rbm]
         confidences = [conf_svc, conf_rf, conf_cnn, conf_rbm]
+        algorithm_analyses = [analysis_svc, analysis_rf, analysis_cnn, analysis_rbm]
         
         # Combine all detected conditions
         all_conditions = list(set(cond_svc + cond_rf + cond_cnn + cond_rbm))
@@ -207,7 +209,12 @@ def predict():
                              precautions=recommendation_data['precautions'],
                              medications=recommendation_data['medications'],
                              diet=recommendation_data['diet'],
-                             disease=recommendation_data.get('disease', 'General Health Assessment'))
+                             disease=recommendation_data.get('disease', 'General Health Assessment'),
+                             algorithm_analyses=algorithm_analyses,
+                             ensemble_prediction=prediction,
+                             user_age=age,
+                             user_heart_rate=heart_rate,
+                             user_symptoms=symptoms)
     
     return render_template('predict.html')
 

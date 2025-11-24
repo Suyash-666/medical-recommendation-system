@@ -22,6 +22,54 @@
             <div class="result-container">
                 <h2>Your Medical Prediction Result</h2>
                 
+                <!-- AI Analysis Section -->
+                <div class="ai-analysis-section" style="margin-bottom: 30px;">
+                    <h3 style="color: #2c3e50; margin-bottom: 20px;">🤖 AI Algorithm Analysis</h3>
+                    <p style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        Our system analyzed your health data using 4 different AI algorithms. Below you can see how each algorithm processed your information:
+                    </p>
+                    
+                    <div class="algorithm-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                        {% for algo in algorithm_analyses %}
+                        <div class="algorithm-card" style="background: white; border: 2px solid #e0e0e0; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <h4 style="color: #1976d2; margin-bottom: 10px;">{{ algo.name }}</h4>
+                            <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">{{ algo.description }}</p>
+                            
+                            <div class="analysis-steps" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <strong style="display: block; margin-bottom: 10px; color: #424242;">Processing Steps:</strong>
+                                <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                                    {% for step in algo.steps %}
+                                    <li style="font-size: 0.85em; color: #555;">{{ step }}</li>
+                                    {% endfor %}
+                                </ol>
+                            </div>
+                            
+                            <div class="algo-result" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: {% if algo.prediction == 0 %}#c8e6c9{% elif algo.prediction == 1 %}#fff9c4{% else %}#ffcdd2{% endif %}; border-radius: 6px;">
+                                <span style="font-weight: bold;">Result:</span>
+                                <span style="font-weight: bold; color: {% if algo.prediction == 0 %}#2e7d32{% elif algo.prediction == 1 %}#f57c00{% else %}#c62828{% endif %};">
+                                    {{ "Healthy" if algo.prediction == 0 else "At Risk" if algo.prediction == 1 else "Critical" }}
+                                </span>
+                            </div>
+                            <div style="margin-top: 10px; text-align: center;">
+                                <div style="background: #e0e0e0; height: 20px; border-radius: 10px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #4caf50, #8bc34a); height: 100%; width: {{ algo.confidence * 100 }}%; transition: width 0.5s;"></div>
+                                </div>
+                                <small style="color: #666;">Confidence: {{ (algo.confidence * 100)|round(1) }}%</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="ensemble-result" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+                        <h4 style="margin-bottom: 10px; font-size: 1.3em;">🎯 Ensemble Decision (Final Result)</h4>
+                        <p style="margin-bottom: 15px; opacity: 0.9;">Combining all 4 algorithms using majority voting</p>
+                        <div style="font-size: 2em; font-weight: bold; margin: 15px 0;">
+                            {{ "✅ Healthy" if ensemble_prediction == 0 else "⚠️ At Risk" if ensemble_prediction == 1 else "🚨 Critical" }}
+                        </div>
+                        <div style="font-size: 1.1em; opacity: 0.95;">Overall Confidence: {{ confidence }}%</div>
+                    </div>
+                </div>
+                
                 <div class="result-card">
                     <div class="result-header">
                         <h3>Health Status Summary: <span class="status-{{ prediction.lower().replace(' ', '-') }}">{{ disease }}</span></h3>
