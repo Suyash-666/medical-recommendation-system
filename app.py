@@ -9,6 +9,28 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from database.db_config import init_firebase, get_db
+from models.medical_models_simple import MedicalPredictor
+
+app = Flask(__name__)
+
+# Load environment variables from .env (local dev) if present
+load_dotenv()
+
+# Secret key should come from environment; fallback only for dev
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-me')
+
+# Initialize Firebase (mandatory)
+try:
+    db = init_firebase()
+except Exception as e:
+    raise SystemExit(f"Firebase initialization failed: {e}")
+
+# Initialize predictor
+print("📊 Using simplified rule-based model")
+predictor = MedicalPredictor()
+import os
+from dotenv import load_dotenv
+from database.db_config import init_firebase, get_db
 
 app = Flask(__name__)
 
