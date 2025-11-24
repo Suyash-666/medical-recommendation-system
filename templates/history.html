@@ -20,6 +20,12 @@
         
         <main class="dashboard-content">
             <h2>Your Medical History</h2>
+            {% if missing_index_url %}
+            <div class="alert alert-warning">
+                Firestore composite index required for ordered history.
+                <a href="{{ missing_index_url }}" target="_blank">Create Index</a> then refresh.
+            </div>
+            {% endif %}
             
             {% if history %}
                 <div class="history-grid">

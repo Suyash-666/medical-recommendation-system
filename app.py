@@ -3,6 +3,7 @@ Medical Recommendation System - Flask Web Application
 Main application with essential routes for landing, auth, dashboard, and predictions
 """
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+import re
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
@@ -98,10 +99,9 @@ def dashboard():
     if 'user_id' not in session:
         flash('Please login first', 'error')
         return redirect(url_for('login'))
-    
-    # Get user's recent records
+
     recent_records = []
-    
+    missing_index_url = None
     try:
         db = get_db_connection()
         records_ref = db.collection('medical_records')
@@ -112,9 +112,26 @@ def dashboard():
             record['id'] = doc.id
             recent_records.append(record)
     except Exception as e:
-        flash(f"Record fetch error: {e}", 'error')
-    
-    return render_template('dashboard.html', username=session['username'], records=recent_records)
+        msg = str(e)
+        if 'create_composite=' in msg:
+            m = re.search(r'(https://console\.firebase\.google\.com[^\s]+create_composite=[^\s]+)', msg)
+            if m:
+                missing_index_url = m.group(1)
+            # Fallback simple query without ordering
+            try:
+                db = get_db_connection()
+                records_ref = db.collection('medical_records')
+                query = records_ref.where('user_id', '==', session['user_id']).limit(5)
+                docs = query.stream()
+                for doc in docs:
+                    record = doc.to_dict()
+                    record['id'] = doc.id
+                    recent_records.append(record)
+            except Exception:
+                pass
+        else:
+            flash(f"Record fetch error: {e}", 'error')
+    return render_template('dashboard.html', username=session['username'], records=recent_records, missing_index_url=missing_index_url)
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
@@ -200,9 +217,9 @@ def history():
     if 'user_id' not in session:
         flash('Please login first', 'error')
         return redirect(url_for('login'))
-    
+
     history_data = []
-    
+    missing_index_url = None
     try:
         db = get_db_connection()
         records_ref = db.collection('medical_records')
@@ -221,9 +238,34 @@ def history():
                 break
             history_data.append(record)
     except Exception as e:
-        flash(f"History fetch error: {e}", 'error')
-    
-    return render_template('history.html', history=history_data)
+        msg = str(e)
+        if 'create_composite=' in msg:
+            m = re.search(r'(https://console\.firebase\.google\.com[^\s]+create_composite=[^\s]+)', msg)
+            if m:
+                missing_index_url = m.group(1)
+            # Fallback simple query without ordering
+            try:
+                db = get_db_connection()
+                records_ref = db.collection('medical_records')
+                query = records_ref.where('user_id', '==', session['user_id'])
+                records = query.stream()
+                for record_doc in records:
+                    record = record_doc.to_dict()
+                    record['id'] = record_doc.id
+                    rec_query = db.collection('recommendations').where('record_id', '==', record_doc.id).limit(1)
+                    rec_docs = rec_query.stream()
+                    for rec_doc in rec_docs:
+                        rec = rec_doc.to_dict()
+                        record['model_used'] = rec.get('model_used')
+                        record['prediction'] = rec.get('prediction')
+                        record['confidence'] = rec.get('confidence')
+                        break
+                    history_data.append(record)
+            except Exception:
+                pass
+        else:
+            flash(f"History fetch error: {e}", 'error')
+    return render_template('history.html', history=history_data, missing_index_url=missing_index_url)
 
 @app.route('/logout')
 def logout():

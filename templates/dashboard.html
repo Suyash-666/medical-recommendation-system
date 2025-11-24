@@ -42,6 +42,13 @@
                 </div>
             </section>
             
+            {% if missing_index_url %}
+            <div class="alert alert-warning">
+                Firestore composite index required for ordered records.
+                <a href="{{ missing_index_url }}" target="_blank">Create Index Now</a>
+                (After creation it may take a minute to build.)
+            </div>
+            {% endif %}
             <section class="recent-records">
                 <h2>Recent Medical Records</h2>
                 {% if records %}
