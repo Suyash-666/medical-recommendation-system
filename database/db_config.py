@@ -1,47 +1,67 @@
-"""
-Firebase configuration with environment variable support
+"""Firebase configuration enforcing credentials (no demo fallback).
+
+Supports three input methods (priority order):
+1. FIREBASE_CREDENTIALS_B64 (base64 of service account JSON)
+2. FIREBASE_CREDENTIALS (raw JSON string)
+3. firebase-credentials.json file in project root
+Raises RuntimeError if none supplied.
 """
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 import json
+import base64
 
 # Initialize Firebase (will be called from app.py)
 def init_firebase():
-    """Initialize Firebase app"""
+    """Initialize Firebase app, requiring valid credentials.
+    Returns Firestore client or raises RuntimeError if credentials missing."""
     try:
-        # If already initialized, return existing app
         firebase_admin.get_app()
+        return firestore.client()
     except ValueError:
-        # Option 1: Use environment variable (for deployment platforms)
-        if os.environ.get('FIREBASE_CREDENTIALS'):
-            try:
-                cred_dict = json.loads(os.environ.get('FIREBASE_CREDENTIALS'))
-                cred = credentials.Certificate(cred_dict)
-                firebase_admin.initialize_app(cred)
-                print("✓ Firebase initialized from environment variable")
-            except Exception as e:
-                print(f"⚠️  Error loading Firebase from environment: {e}")
-                return None
-        
-        # Option 2: Use local credentials file
-        elif os.path.exists('firebase-credentials.json'):
-            cred = credentials.Certificate('firebase-credentials.json')
-            firebase_admin.initialize_app(cred)
-            print("✓ Firebase initialized from local credentials file")
-        
-        # Option 3: Demo mode
-        else:
-            print("⚠️  WARNING: Running in DEMO MODE without Firebase!")
-            print("   For deployment, set FIREBASE_CREDENTIALS environment variable")
-            print("   For local development, add firebase-credentials.json")
-            return None
-    
+        pass  # Not initialized yet
+
+    # Try base64 env
+    b64 = os.environ.get('FIREBASE_CREDENTIALS_B64')
+    raw = os.environ.get('FIREBASE_CREDENTIALS')
+    path = 'firebase-credentials.json'
+    cred_dict = None
+
+    if b64:
+        try:
+            decoded = base64.b64decode(b64).decode('utf-8')
+            cred_dict = json.loads(decoded)
+            print("✓ Firebase credentials loaded from FIREBASE_CREDENTIALS_B64")
+        except Exception as e:
+            raise RuntimeError(f"Invalid FIREBASE_CREDENTIALS_B64: {e}")
+    elif raw:
+        try:
+            cred_dict = json.loads(raw)
+            print("✓ Firebase credentials loaded from FIREBASE_CREDENTIALS")
+        except Exception as e:
+            raise RuntimeError(f"Invalid FIREBASE_CREDENTIALS JSON: {e}")
+    elif os.path.exists(path):
+        try:
+            with open(path,'r',encoding='utf-8') as f:
+                cred_dict = json.load(f)
+            print("✓ Firebase credentials loaded from firebase-credentials.json")
+        except Exception as e:
+            raise RuntimeError(f"Failed reading firebase-credentials.json: {e}")
+    else:
+        raise RuntimeError("Firebase credentials not found (set FIREBASE_CREDENTIALS_B64 or FIREBASE_CREDENTIALS or add firebase-credentials.json)")
+
+    try:
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        raise RuntimeError(f"Failed initializing Firebase: {e}")
+
     return firestore.client()
 
 def get_db():
-    """Get Firestore database instance"""
+    """Return Firestore client, raising if unavailable."""
     try:
         return firestore.client()
-    except:
-        return None
+    except Exception as e:
+        raise RuntimeError(f"Firestore unavailable: {e}")
