@@ -58,16 +58,49 @@ python app.py
 Visit http://127.0.0.1:5000
 
 ## Features
-- Signup/Login (Firebase or demo)
-- Ensemble prediction across simplified models
-- Condition & symptom-based recommendations
-- History tracking (Firestore or in-memory)
-- Safe demo mode without external services
+- Signup/Login with Firebase authentication
+- **Dual ML Mode**: Switch between rule-based and real machine learning models
+- Ensemble prediction across 4 algorithms (SVC, Random Forest, Neural Network, Naive Bayes)
+- Detailed algorithm visualization showing step-by-step analysis
+- Condition & symptom-based medical recommendations
+- History tracking with Firebase Firestore
+- Password visibility toggle for better UX
+
+## ML Models
+
+### Simple Mode (Default)
+Rule-based system using symptom analysis and health metrics. Fast and reliable.
+
+### Real ML Mode (Optional)
+Trained scikit-learn models with actual machine learning algorithms:
+- **Support Vector Classifier (SVC)** - Kernel-based classification
+- **Random Forest** - Ensemble of 50 decision trees
+- **Logistic Regression** - Neural network simulation
+- **Naive Bayes** - Probabilistic classification
+
+**Enable Real ML:**
+```powershell
+# Local
+$env:USE_REAL_ML = "true"
+python app.py
+
+# Railway/Platform
+Add environment variable: USE_REAL_ML=true
+```
+
+**Disable (Default):**
+```powershell
+# Don't set USE_REAL_ML, or set it to "false"
+python app.py
+```
+
+The app automatically falls back to simple mode if real ML fails to load.
 
 ## Environment Variables
-- `FLASK_SECRET_KEY` (auto-generated on Render if not set)
-- `FIREBASE_CREDENTIALS` (JSON service account; optional)
- - `FIREBASE_CREDENTIALS_B64` (base64 version of JSON; overrides raw JSON if set)
+- `FLASK_SECRET_KEY` (required for sessions - generate random string)
+- `FIREBASE_CREDENTIALS` (JSON service account - required)
+- `FIREBASE_CREDENTIALS_B64` (base64 version of JSON; overrides raw JSON if set)
+- `USE_REAL_ML` (optional: set to `true` to use trained scikit-learn models, `false` or omit for rule-based)
 
 ## Production Notes
 - Use `gunicorn app:app` (handled by Render)

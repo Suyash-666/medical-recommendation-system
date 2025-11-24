@@ -9,8 +9,6 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from database.db_config import init_firebase, get_db
-from models.medical_models_simple import MedicalPredictor
-
 
 app = Flask(__name__)
 
@@ -20,13 +18,34 @@ load_dotenv()
 # Secret key should come from environment; fallback only for dev
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-me')
 
-# Initialize Firebase (mandatory) and predictor
+# Initialize Firebase (mandatory)
 try:
     db = init_firebase()
 except Exception as e:
     raise SystemExit(f"Firebase initialization failed: {e}")
 
-predictor = MedicalPredictor()
+# Initialize ML predictor with optional real ML models
+USE_REAL_ML = os.environ.get('USE_REAL_ML', 'false').lower() == 'true'
+
+try:
+    if USE_REAL_ML:
+        print("🤖 Loading REAL ML models (scikit-learn)...")
+        from models.medical_models_real import MedicalPredictor
+        predictor = MedicalPredictor()
+        if predictor.trained:
+            print("✓ Real ML models trained and ready")
+        else:
+            print("⚠ Real ML training failed, falling back to simple model")
+            from models.medical_models_simple import MedicalPredictor
+            predictor = MedicalPredictor()
+    else:
+        print("📊 Using simplified rule-based model")
+        from models.medical_models_simple import MedicalPredictor
+        predictor = MedicalPredictor()
+except Exception as e:
+    print(f"⚠ ML model loading failed: {e}, using simple model")
+    from models.medical_models_simple import MedicalPredictor
+    predictor = MedicalPredictor()
 
 def get_db_connection():
     """Get Firestore database connection (raises if unavailable)."""
