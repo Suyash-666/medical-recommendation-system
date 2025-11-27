@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('predict') }}">New Prediction</a>
+                <a href="{{ url_for('history') }}" class="active">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            <h2>🔔 Notifications & Alerts</h2>
+            
+            <div style="max-width: 900px; margin: 0 auto;">
+                <!-- Filter Options -->
+                <div class="form-box" style="margin-bottom: 30px;">
+                    <form method="GET" action="{{ url_for('notifications') }}" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 1; min-width: 200px;">
+                            <label for="filter_type">Filter by Type</label>
+                            <select id="filter_type" name="filter_type">
+                                <option value="all">All Notifications</option>
+                                <option value="critical">Critical Alerts</option>
+                                <option value="reminder">Reminders</option>
+                                <option value="result">Test Results</option>
+                                <option value="appointment">Appointments</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="flex: 1; min-width: 200px;">
+                            <label for="filter_status">Status</label>
+                            <select id="filter_status" name="filter_status">
+                                <option value="all">All</option>
+                                <option value="unread">Unread Only</option>
+                                <option value="read">Read Only</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="margin-bottom: 16px;">Apply Filter</button>
+                        <form method="POST" action="{{ url_for('mark_all_read') }}" style="display: inline;">
+                            <button type="submit" class="btn btn-secondary" style="margin-bottom: 16px;">Mark All as Read</button>
+                        </form>
+                    </form>
+                </div>
+                
+                <!-- Notifications List -->
+                {% if notifications %}
+                <div style="display: grid; gap: 15px;">
+                    {% for notification in notifications %}
+                    <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; 
+                         background: {{ 'white' if notification.is_read else '#e3f2fd' }};
+                         border-left: 4px solid {{ '#d32f2f' if notification.priority == 'critical' else '#1976d2' if notification.priority == 'high' else '#4caf50' }};">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 15px;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    {% if notification.priority == 'critical' %}
+                                    <span style="font-size: 1.5em;">🚨</span>
+                                    {% elif notification.type == 'reminder' %}
+                                    <span style="font-size: 1.5em;">⏰</span>
+                                    {% elif notification.type == 'result' %}
+                                    <span style="font-size: 1.5em;">📊</span>
+                                    {% elif notification.type == 'appointment' %}
+                                    <span style="font-size: 1.5em;">📅</span>
+                                    {% else %}
+                                    <span style="font-size: 1.5em;">🔔</span>
+                                    {% endif %}
+                                    
+                                    <h4 style="color: #1976d2; margin: 0;">{{ notification.title }}</h4>
+                                    
+                                    {% if not notification.is_read %}
+                                    <span style="background: #1976d2; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">NEW</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <p style="margin: 10px 0 10px 40px; color: #555; line-height: 1.6;">{{ notification.message }}</p>
+                                
+                                <div style="margin-left: 40px; font-size: 0.9em; color: #999;">
+                                    <span>📅 {{ notification.date }} at {{ notification.time }}</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                                {% if not notification.is_read %}
+                                <form method="POST" action="{{ url_for('mark_notification_read', notification_id=notification.id) }}" style="display: inline;">
+                                    <button type="submit" style="background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; white-space: nowrap;">Mark Read</button>
+                                </form>
+                                {% endif %}
+                                
+                                <form method="POST" action="{{ url_for('delete_notification', notification_id=notification.id) }}" style="display: inline;">
+                                    <button type="submit" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination (if needed) -->
+                {% if total_pages > 1 %}
+                <div style="margin-top: 30px; text-align: center;">
+                    {% if current_page > 1 %}
+                    <a href="{{ url_for('notifications', page=current_page-1) }}" class="btn btn-secondary">← Previous</a>
+                    {% endif %}
+                    
+                    <span style="margin: 0 15px;">Page {{ current_page }} of {{ total_pages }}</span>
+                    
+                    {% if current_page < total_pages %}
+                    <a href="{{ url_for('notifications', page=current_page+1) }}" class="btn btn-secondary">Next →</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="no-records" style="text-align: center; padding: 40px; background: white; border-radius: 8px;">
+                    <p style="font-size: 1.2em; color: #999;">No notifications to display.</p>
+                </div>
+                {% endif %}
+                
+                <div style="margin-top: 30px; text-align: center;">
+                    <a href="{{ url_for('history') }}" class="btn btn-secondary">← Back to History</a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Dashboard</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

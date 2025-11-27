@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Lab Reports - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('predict') }}">New Prediction</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            <h2>📄 Upload Lab Reports</h2>
+            
+            <div class="form-box" style="max-width: 800px; margin: 0 auto;">
+                <p style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    Upload your medical lab reports (PDF, JPG, PNG) and our AI will analyze them to provide insights.
+                </p>
+                
+                <form method="POST" action="{{ url_for('lab_upload') }}" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="report_type">Report Type</label>
+                        <select id="report_type" name="report_type" required>
+                            <option value="">-- Select Report Type --</option>
+                            <option value="blood_test">Blood Test (CBC, Blood Sugar, etc.)</option>
+                            <option value="urine_test">Urine Analysis</option>
+                            <option value="xray">X-Ray</option>
+                            <option value="mri">MRI Scan</option>
+                            <option value="ct_scan">CT Scan</option>
+                            <option value="ecg">ECG/EKG</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="test_date">Test Date</label>
+                        <input type="date" id="test_date" name="test_date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lab_name">Lab/Hospital Name</label>
+                        <input type="text" id="lab_name" name="lab_name" placeholder="e.g., City Hospital Lab" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="file_upload">Upload Report File (PDF, JPG, PNG - Max 5MB)</label>
+                        <input type="file" id="file_upload" name="file_upload" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Additional Notes (Optional)</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="Any specific concerns or notes about the report..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">📤 Upload & Analyze</button>
+                </form>
+                
+                <div style="margin-top: 30px; text-align: center;">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

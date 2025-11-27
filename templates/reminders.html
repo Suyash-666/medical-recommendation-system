@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reminders - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('predict') }}">New Prediction</a>
+                <a href="{{ url_for('history') }}" class="active">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            <h2>⏰ Test & Medication Reminders</h2>
+            
+            <div style="max-width: 900px; margin: 0 auto;">
+                <!-- Add New Reminder -->
+                <div class="form-box" style="margin-bottom: 30px;">
+                    <h3>Add New Reminder</h3>
+                    <form method="POST" action="{{ url_for('reminders') }}">
+                        <div class="form-group">
+                            <label for="reminder_type">Reminder Type</label>
+                            <select id="reminder_type" name="reminder_type" required>
+                                <option value="medication">💊 Medication</option>
+                                <option value="test">🧪 Lab Test</option>
+                                <option value="appointment">📅 Doctor Appointment</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <input type="text" id="title" name="title" placeholder="e.g., Take Blood Pressure Medicine" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="2" placeholder="Additional details..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reminder_date">Date</label>
+                            <input type="date" id="reminder_date" name="reminder_date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reminder_time">Time</label>
+                            <input type="time" id="reminder_time" name="reminder_time" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="frequency">Frequency</label>
+                            <select id="frequency" name="frequency">
+                                <option value="once">Once</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-block">Add Reminder</button>
+                    </form>
+                </div>
+                
+                <!-- Existing Reminders -->
+                <h3>Your Reminders</h3>
+                {% if reminders %}
+                <div style="display: grid; gap: 15px; margin-top: 20px;">
+                    {% for reminder in reminders %}
+                    <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; background: {% if reminder.is_overdue %}#ffebee{% elif reminder.is_today %}#fff9c4{% else %}white{% endif %};">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div>
+                                <h4 style="color: #1976d2; margin-bottom: 5px;">{{ reminder.title }}</h4>
+                                <span style="background: #e3f2fd; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">{{ reminder.type }}</span>
+                            </div>
+                            <form method="POST" action="{{ url_for('delete_reminder', reminder_id=reminder.id) }}" style="display: inline;">
+                                <button type="submit" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
+                            </form>
+                        </div>
+                        <p style="margin: 10px 0; color: #666;">{{ reminder.description }}</p>
+                        <p style="margin: 5px 0;"><strong>📅 Date:</strong> {{ reminder.date }}</p>
+                        <p style="margin: 5px 0;"><strong>⏰ Time:</strong> {{ reminder.time }}</p>
+                        <p style="margin: 5px 0;"><strong>🔄 Frequency:</strong> {{ reminder.frequency }}</p>
+                        {% if reminder.is_overdue %}
+                        <p style="color: #d32f2f; font-weight: bold; margin-top: 10px;">⚠️ Overdue!</p>
+                        {% elif reminder.is_today %}
+                        <p style="color: #f57c00; font-weight: bold; margin-top: 10px;">📌 Due Today!</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="no-records" style="text-align: center; padding: 40px; background: white; border-radius: 8px;">
+                    <p style="font-size: 1.2em; color: #999;">No reminders set yet. Add your first reminder above!</p>
+                </div>
+                {% endif %}
+                
+                <div style="margin-top: 30px; text-align: center;">
+                    <a href="{{ url_for('history') }}" class="btn btn-secondary">← Back to History</a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Dashboard</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

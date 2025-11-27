@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Specialist - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('predict') }}">New Prediction</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            <h2>🔍 Find Medical Specialist</h2>
+            
+            <div class="form-box" style="max-width: 800px; margin: 0 auto;">
+                <form method="POST" action="{{ url_for('specialist_finder') }}">
+                    <div class="form-group">
+                        <label for="specialty">Select Medical Specialty</label>
+                        <select id="specialty" name="specialty" required>
+                            <option value="">-- Choose Specialty --</option>
+                            <option value="cardiology">Cardiology (Heart Specialist)</option>
+                            <option value="neurology">Neurology (Brain & Nervous System)</option>
+                            <option value="orthopedics">Orthopedics (Bones & Joints)</option>
+                            <option value="gastroenterology">Gastroenterology (Digestive System)</option>
+                            <option value="dermatology">Dermatology (Skin Specialist)</option>
+                            <option value="ophthalmology">Ophthalmology (Eye Specialist)</option>
+                            <option value="ent">ENT (Ear, Nose, Throat)</option>
+                            <option value="general">General Physician</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="location">Your Location/City</label>
+                        <input type="text" id="location" name="location" placeholder="e.g., Mumbai, Delhi" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="symptoms">Symptoms/Condition (Optional)</label>
+                        <textarea id="symptoms" name="symptoms" rows="3" placeholder="Describe your symptoms..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">Find Specialists</button>
+                </form>
+                
+                {% if specialists %}
+                <div style="margin-top: 30px;">
+                    <h3>Recommended Specialists in {{ location }}</h3>
+                    <div style="display: grid; gap: 15px; margin-top: 20px;">
+                        {% for specialist in specialists %}
+                        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; background: white;">
+                            <h4 style="color: #1976d2; margin-bottom: 10px;">Dr. {{ specialist.name }}</h4>
+                            <p><strong>Specialty:</strong> {{ specialist.specialty }}</p>
+                            <p><strong>Experience:</strong> {{ specialist.experience }} years</p>
+                            <p><strong>Hospital:</strong> {{ specialist.hospital }}</p>
+                            <p><strong>Location:</strong> {{ specialist.location }}</p>
+                            <p><strong>Contact:</strong> {{ specialist.contact }}</p>
+                            <p><strong>Available:</strong> {{ specialist.available_days }}</p>
+                            <a href="tel:{{ specialist.contact }}" class="btn btn-primary" style="margin-top: 10px;">📞 Call Now</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Report Analysis - Medical Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>🏥 Medical Dashboard</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('predict') }}">New Prediction</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </nav>
+        
+        <main class="dashboard-content">
+            <h2>📊 Lab Report Analysis Results</h2>
+            
+            <div class="result-container" style="max-width: 900px; margin: 0 auto;">
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3>Report Summary</h3>
+                    </div>
+                    
+                    <div class="result-body">
+                        <div class="result-section">
+                            <h4>📋 Report Details</h4>
+                            <p><strong>Report Type:</strong> {{ report_type }}</p>
+                            <p><strong>Test Date:</strong> {{ test_date }}</p>
+                            <p><strong>Lab/Hospital:</strong> {{ lab_name }}</p>
+                            <p><strong>Uploaded On:</strong> {{ upload_date }}</p>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h4>🔍 AI Analysis</h4>
+                            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                                <p style="color: #555; line-height: 1.8;">{{ analysis_summary }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h4>📈 Key Findings</h4>
+                            <ul class="recommendations-list">
+                                {% for finding in key_findings %}
+                                    <li>{{ finding }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        {% if abnormal_values %}
+                        <div class="result-section">
+                            <h4 style="color: #d32f2f;">⚠️ Abnormal Values Detected</h4>
+                            <ul class="recommendations-list">
+                                {% for value in abnormal_values %}
+                                    <li style="color: #d32f2f;">{{ value }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="result-section">
+                            <h4>💡 Recommendations</h4>
+                            <ul class="recommendations-list">
+                                {% for recommendation in recommendations %}
+                                    <li>{{ recommendation }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="result-footer">
+                        <p class="disclaimer" style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; border-radius: 4px;">
+                            ⚠️ <strong>Medical Disclaimer:</strong> This AI analysis is for informational purposes only. Please consult your doctor for proper diagnosis and treatment based on these lab results.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="action-buttons" style="margin-top: 20px;">
+                    <a href="{{ url_for('lab_upload') }}" class="btn btn-primary">Upload Another Report</a>
+                    <a href="{{ url_for('specialist_finder') }}" class="btn btn-primary">Find Specialist</a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

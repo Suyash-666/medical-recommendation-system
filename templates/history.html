@@ -20,6 +20,13 @@
         
         <main class="dashboard-content">
             <h2>Your Medical History</h2>
+            
+            <!-- New Action Buttons -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <a href="{{ url_for('reminders') }}" class="btn btn-primary">⏰ Test & Med Reminders</a>
+                <a href="{{ url_for('notifications') }}" class="btn btn-primary">🔔 Notifications & Alerts</a>
+            </div>
+            
             {% if missing_index_url %}
             <div class="alert alert-warning">
                 Firestore composite index required for ordered history.
