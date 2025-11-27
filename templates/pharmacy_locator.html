@@ -148,18 +148,26 @@
 
         document.getElementById('searchBtn').addEventListener('click', async () => {
             try {
-                let center = map.getCenter();
+                resultsEl.innerHTML = '<div class="result-item">Searching pharmacies...</div>';
+                let centerLat, centerLon;
                 const place = document.getElementById('searchPlace').value.trim();
                 const radius = parseInt(document.getElementById('radius').value, 10);
+                
                 if (place) {
                     const geo = await geocodePlace(place);
                     setView(geo.lat, geo.lon);
-                    center = geo;
+                    centerLat = geo.lat;
+                    centerLon = geo.lon;
+                } else {
+                    const center = map.getCenter();
+                    centerLat = center.lat;
+                    centerLon = center.lng;
                 }
-                const elements = await findPharmacies(center.lat, center.lng || center.lon, radius);
+                
+                const elements = await findPharmacies(centerLat, centerLon, radius);
                 renderResults(elements);
             } catch (e) {
-                resultsEl.innerHTML = `<div class=\"result-item\">Search error: ${e.message}</div>`;
+                resultsEl.innerHTML = `<div class="result-item" style="background:#ffebee; border-left:4px solid #d32f2f;">❌ Error: ${e.message}</div>`;
             }
         });
 
