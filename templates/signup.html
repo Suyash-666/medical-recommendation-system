@@ -33,8 +33,8 @@
                 <div class="form-group">
                     <label for="password">Password</label>
                     <div style="position: relative;">
-                        <input type="password" id="password" name="password" required style="padding-right: 45px; -webkit-text-security: disc;" autocomplete="new-password" data-lpignore="true" data-form-type="other">
-                        <span onclick="togglePassword()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; z-index: 10;">
+                        <input type="password" id="password" name="password" required style="padding-right: 45px;" autocomplete="new-password">
+                        <span id="toggleIcon" onclick="togglePassword()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; z-index: 10;">
                             👁️
                         </span>
                     </div>
@@ -43,7 +43,7 @@
                 <script>
                 function togglePassword() {
                     const passwordField = document.getElementById('password');
-                    const icon = event.target;
+                    const icon = document.getElementById('toggleIcon');
                     if (passwordField.type === 'password') {
                         passwordField.type = 'text';
                         icon.textContent = '🙈';
