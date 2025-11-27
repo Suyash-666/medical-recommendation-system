@@ -32,8 +32,27 @@
                 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <div style="position: relative;">
+                        <input type="password" id="password" name="password" required style="padding-right: 40px;">
+                        <span onclick="togglePassword()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none;">
+                            👁️
+                        </span>
+                    </div>
                 </div>
+                
+                <script>
+                function togglePassword() {
+                    const passwordField = document.getElementById('password');
+                    const icon = event.target;
+                    if (passwordField.type === 'password') {
+                        passwordField.type = 'text';
+                        icon.textContent = '🙈';
+                    } else {
+                        passwordField.type = 'password';
+                        icon.textContent = '👁️';
+                    }
+                }
+                </script>
                 
                 <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
             </form>
