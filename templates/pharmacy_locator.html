@@ -134,19 +134,23 @@
         }
 
         document.getElementById('locateBtn').addEventListener('click', () => {
+            console.log('Locate button clicked');
             if (!navigator.geolocation) {
                 alert('Geolocation not supported on this device.');
                 return;
             }
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
+                console.log('Got location:', latitude, longitude);
                 setView(latitude, longitude);
             }, (err) => {
+                console.error('Location error:', err);
                 alert('Location access denied or unavailable.');
             }, { enableHighAccuracy: true, timeout: 10000 });
         });
 
         document.getElementById('searchBtn').addEventListener('click', async () => {
+            console.log('Search button clicked');
             try {
                 resultsEl.innerHTML = '<div class="result-item">Searching pharmacies...</div>';
                 let centerLat, centerLon;
@@ -154,7 +158,9 @@
                 const radius = parseInt(document.getElementById('radius').value, 10);
                 
                 if (place) {
+                    console.log('Geocoding place:', place);
                     const geo = await geocodePlace(place);
+                    console.log('Geocode result:', geo);
                     setView(geo.lat, geo.lon);
                     centerLat = geo.lat;
                     centerLon = geo.lon;
@@ -162,11 +168,15 @@
                     const center = map.getCenter();
                     centerLat = center.lat;
                     centerLon = center.lng;
+                    console.log('Using map center:', centerLat, centerLon);
                 }
                 
+                console.log('Finding pharmacies at:', centerLat, centerLon, 'radius:', radius);
                 const elements = await findPharmacies(centerLat, centerLon, radius);
+                console.log('Found pharmacies:', elements.length);
                 renderResults(elements);
             } catch (e) {
+                console.error('Search error:', e);
                 resultsEl.innerHTML = `<div class="result-item" style="background:#ffebee; border-left:4px solid #d32f2f;">❌ Error: ${e.message}</div>`;
             }
         });
