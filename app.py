@@ -78,6 +78,13 @@ def landing():
     """Landing page route"""
     return render_template('landing.html')
 
+@app.route('/pharmacy-locator')
+def pharmacy_locator():
+    """Pharmacy locator page (uses client-side map + Overpass API)."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('pharmacy_locator.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login route"""
