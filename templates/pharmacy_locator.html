@@ -110,8 +110,8 @@
                 const lon = el.lon || (el.center && el.center.lon);
                 if (lat && lon) {
                     const name = el.tags && (el.tags.name || 'Pharmacy');
-                    const addr = [el.tags?.['addr:housenumber'], el.tags?.['addr:street'], el.tags?.['addr:city']].filter(Boolean).join(', ');
-                    const phone = el.tags?.phone || el.tags?.contact:phone || '';
+                    const addr = [el.tags && el.tags['addr:housenumber'], el.tags && el.tags['addr:street'], el.tags && el.tags['addr:city']].filter(Boolean).join(', ');
+                    const phone = (el.tags && (el.tags['phone'] || el.tags['contact:phone'])) || '';
                     const marker = L.marker([lat, lon]).addTo(pharmacyLayer);
                     marker.bindPopup(`<strong>${name}</strong><br>${addr || ''}`);
                     const gmaps = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
@@ -156,7 +156,7 @@
                     setView(geo.lat, geo.lon);
                     center = geo;
                 }
-                const elements = await findPharmacies(center.lat || center.lat, center.lng || center.lon, radius);
+                const elements = await findPharmacies(center.lat, center.lng || center.lon, radius);
                 renderResults(elements);
             } catch (e) {
                 resultsEl.innerHTML = `<div class=\"result-item\">Search error: ${e.message}</div>`;

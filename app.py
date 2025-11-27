@@ -85,6 +85,59 @@ def pharmacy_locator():
         return redirect(url_for('login'))
     return render_template('pharmacy_locator.html')
 
+@app.route('/health-profile', methods=['GET', 'POST'])
+def health_profile():
+    """User health profile and account settings."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    db = get_db_connection()
+    user_doc = db.collection('users').document(session['user_id']).get()
+    user = user_doc.to_dict() if user_doc.exists else {}
+    if request.method == 'POST':
+        data = {
+            'age': request.form.get('age'),
+            'blood_type': request.form.get('blood_type'),
+            'allergies': request.form.get('allergies'),
+            'conditions': request.form.get('conditions'),
+            'emergency_contact': request.form.get('emergency_contact'),
+        }
+        db.collection('users').document(session['user_id']).set(data, merge=True)
+        flash('Health profile updated', 'success')
+        return redirect(url_for('health_profile'))
+    return render_template('health_profile.html', user=user)
+
+@app.route('/health-tips')
+def health_tips():
+    """Educational resources and health tips."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    tips = [
+        {'title': 'Stay Hydrated', 'desc': 'Drink 8 glasses of water daily.'},
+        {'title': 'Balanced Diet', 'desc': 'Include fruits, veggies, protein, and whole grains.'},
+        {'title': 'Regular Exercise', 'desc': 'Aim for 30 minutes of activity most days.'},
+        {'title': 'Sleep Hygiene', 'desc': 'Maintain 7-8 hours of quality sleep.'},
+        {'title': 'Stress Management', 'desc': 'Practice mindfulness and deep breathing.'},
+    ]
+    return render_template('health_tips.html', tips=tips)
+
+@app.route('/emergency-sos', methods=['GET', 'POST'])
+def emergency_sos():
+    """Emergency contacts and quick SOS info."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    db = get_db_connection()
+    user_doc = db.collection('users').document(session['user_id']).get()
+    user = user_doc.to_dict() if user_doc.exists else {}
+    if request.method == 'POST':
+        sos = {
+            'sos_contacts': request.form.get('sos_contacts'),
+            'primary_hospital': request.form.get('primary_hospital'),
+        }
+        db.collection('users').document(session['user_id']).set(sos, merge=True)
+        flash('Emergency info updated', 'success')
+        return redirect(url_for('emergency_sos'))
+    return render_template('emergency_sos.html', user=user)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login route"""

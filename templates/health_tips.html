@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Tips & Resources</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="navbar">
+      <h1>🏥 Medical Dashboard</h1>
+      <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('predict') }}">New Prediction</a>
+        <a href="{{ url_for('history') }}">History</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </div>
+    </nav>
+
+    <main class="dashboard-content">
+      <h2>📚 Health Tips & Educational Resources</h2>
+      <div style="display:grid; gap:15px; max-width:900px; margin:0 auto;">
+        {% for tip in tips %}
+        <div style="background:white; border:1px solid #e0e0e0; border-radius:8px; padding:16px;">
+          <h3 style="color:#1976d2; margin:0 0 8px 0;">{{ tip.title }}</h3>
+          <p style="color:#555;">{{ tip.desc }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="text-align:center; margin-top:20px;">
+        <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

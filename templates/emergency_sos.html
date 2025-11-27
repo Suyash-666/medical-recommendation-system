@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Contacts & SOS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="navbar">
+      <h1>🏥 Medical Dashboard</h1>
+      <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('predict') }}">New Prediction</a>
+        <a href="{{ url_for('history') }}">History</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </div>
+    </nav>
+
+    <main class="dashboard-content">
+      <h2>🚨 Emergency Contacts & SOS</h2>
+      <div class="form-box" style="max-width: 800px; margin: 0 auto;">
+        <form method="POST" action="{{ url_for('emergency_sos') }}">
+          <div class="form-group">
+            <label for="sos_contacts">SOS Contacts (comma-separated)</label>
+            <textarea id="sos_contacts" name="sos_contacts" rows="2" placeholder="Name + Phone, Name + Phone">{{ user.get('sos_contacts','') }}</textarea>
+          </div>
+          <div class="form-group">
+            <label for="primary_hospital">Primary Hospital</label>
+            <input id="primary_hospital" name="primary_hospital" type="text" placeholder="Nearest preferred hospital" value="{{ user.get('primary_hospital','') }}" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Save Emergency Info</button>
+        </form>
+
+        <div style="margin-top:20px;">
+          <h3>Useful Emergency Numbers</h3>
+          <ul>
+            <li>🚑 Ambulance: 108</li>
+            <li>🚓 Police: 100</li>
+            <li>🔥 Fire: 101</li>
+            <li>☣️ Poison Control: 1066</li>
+          </ul>
+        </div>
+
+        <div style="text-align:center; margin-top:20px;">
+          <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

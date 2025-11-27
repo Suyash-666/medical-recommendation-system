@@ -311,6 +311,11 @@ header h1 {
 .data-table th,
 .data-table td {
     padding: 12px;
+/* Password input tweaks */
+input[type="password"]::-ms-reveal { display: none !important; }
+input[type="password"]::-webkit-textfield-decoration-container { display: none !important; }
+/* Ensure our custom icon is the only visible toggle */
+input[type="password"] { padding-right: 45px; }
     text-align: left;
     border-bottom: 1px solid #ddd;
 }
