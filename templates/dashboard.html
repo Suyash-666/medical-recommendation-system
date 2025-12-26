@@ -23,7 +23,7 @@
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                        <div class="alert alert-{{ category }}">{{ message|safe }}</div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
@@ -58,13 +58,6 @@
                 </div>
             </section>
             
-            {% if missing_index_url %}
-            <div class="alert alert-warning">
-                Firestore composite index required for ordered records.
-                <a href="{{ missing_index_url }}" target="_blank">Create Index Now</a>
-                (After creation it may take a minute to build.)
-            </div>
-            {% endif %}
             <section class="recent-records">
                 <h2>Recent Medical Records</h2>
                 {% if records %}

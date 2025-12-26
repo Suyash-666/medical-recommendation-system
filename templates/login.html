@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Medical Recommendation System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 <body>
     <div class="form-container">
@@ -27,27 +28,13 @@
                 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <div style="position: relative;">
-                        <input type="password" id="password" name="password" required style="padding-right: 45px;" autocomplete="current-password">
-                        <span id="toggleIcon" onclick="togglePassword()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; z-index: 10;">
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" required autocomplete="current-password">
+                        <span id="toggleIcon" class="toggle-password" onclick="togglePassword()">
                             👁️
                         </span>
                     </div>
                 </div>
-                
-                <script>
-                function togglePassword() {
-                    const passwordField = document.getElementById('password');
-                    const icon = document.getElementById('toggleIcon');
-                    if (passwordField.type === 'password') {
-                        passwordField.type = 'text';
-                        icon.textContent = '🙈';
-                    } else {
-                        passwordField.type = 'password';
-                        icon.textContent = '👁️';
-                    }
-                }
-                </script>
                 
                 <button type="submit" class="btn btn-primary btn-block">Login</button>
             </form>
@@ -61,5 +48,6 @@
             </p>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/password_toggle.js') }}"></script>
 </body>
 </html>

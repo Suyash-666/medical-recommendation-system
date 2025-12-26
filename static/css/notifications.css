@@ -1,0 +1,165 @@
+/* Notifications Page Specific Styles */
+
+.notifications-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.notifications-filter-box {
+    margin-bottom: 30px;
+}
+
+.filter-form {
+    display: flex;
+    gap: 15px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.filter-form .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-actions button {
+    margin-bottom: 16px;
+}
+
+.filter-actions form {
+    display: inline;
+}
+
+.notifications-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.notification-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    background: white;
+}
+
+.notification-card.unread {
+    background: #f5f9ff;
+    border-left: 4px solid #1976d2;
+}
+
+.notification-card.priority-critical {
+    border-left-color: #d32f2f;
+}
+
+.notification-card.priority-high {
+    border-left-color: #1976d2;
+}
+
+.notification-card.priority-medium {
+    border-left-color: #4caf50;
+}
+
+.notification-card.priority-low {
+    border-left-color: #4caf50;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 15px;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.notification-icon {
+    font-size: 1.5em;
+}
+
+.notification-title {
+    color: #1976d2;
+    margin: 0;
+}
+
+.notification-badge {
+    background: #1976d2;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75em;
+}
+
+.notification-message {
+    margin: 10px 0 10px 40px;
+    color: #555;
+    line-height: 1.6;
+}
+
+.notification-meta {
+    margin-left: 40px;
+    font-size: 0.9em;
+    color: #999;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.notification-actions form {
+    display: inline;
+}
+
+.btn-mark-read {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-delete {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.pagination {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.pagination-info {
+    margin: 0 15px;
+}
+
+.no-notifications {
+    text-align: center;
+    padding: 40px;
+    background: white;
+    border-radius: 8px;
+}
+
+.no-notifications p {
+    font-size: 1.2em;
+    color: #999;
+}
+
+.back-button-container {
+    margin-top: 30px;
+    text-align: center;
+}

@@ -1,0 +1,27 @@
+/* Login & Signup Pages - Password Toggle Specific Styles */
+
+.password-container {
+    position: relative;
+}
+
+.password-container input[type="password"],
+.password-container input[type="text"] {
+    padding-right: 45px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    user-select: none;
+    font-size: 20px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    z-index: 10;
+}

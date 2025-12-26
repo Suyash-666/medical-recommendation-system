@@ -5,14 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pharmacy Locator - Medical Recommendation System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pharmacy_locator.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-    <style>
-        #map { height: 420px; width: 100%; border-radius: 8px; }
-        .results-list { margin-top: 15px; }
-        .result-item { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-        .controls input, .controls select { min-width: 180px; }
-    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -51,138 +45,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script>
-        const map = L.map('map');
-        let userMarker = null;
-        let pharmacyLayer = L.layerGroup().addTo(map);
-        const resultsEl = document.getElementById('results');
-
-        const osmTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        function setView(lat, lon) {
-            map.setView([lat, lon], 14);
-            if (userMarker) userMarker.remove();
-            userMarker = L.marker([lat, lon]).addTo(map).bindPopup('You are here').openPopup();
-        }
-
-        async function geocodePlace(query) {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
-            const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-            const data = await res.json();
-            if (data && data.length) {
-                return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-            }
-            throw new Error('Place not found');
-        }
-
-        async function findPharmacies(lat, lon, radiusMeters) {
-            const overpassUrl = 'https://overpass-api.de/api/interpreter';
-            const query = `
-                [out:json][timeout:25];
-                (
-                  node["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
-                  way["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
-                  relation["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
-                );
-                out center tags;
-            `;
-            const res = await fetch(overpassUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ data: query })
-            });
-            const json = await res.json();
-            return json.elements || [];
-        }
-
-        function renderResults(elements) {
-            pharmacyLayer.clearLayers();
-            resultsEl.innerHTML = '';
-            if (!elements.length) {
-                resultsEl.innerHTML = '<div class="result-item">No pharmacies found in the selected radius.</div>';
-                return;
-            }
-            elements.forEach(el => {
-                const lat = el.lat || (el.center && el.center.lat);
-                const lon = el.lon || (el.center && el.center.lon);
-                if (lat && lon) {
-                    const name = el.tags && (el.tags.name || 'Pharmacy');
-                    const addr = [el.tags && el.tags['addr:housenumber'], el.tags && el.tags['addr:street'], el.tags && el.tags['addr:city']].filter(Boolean).join(', ');
-                    const phone = (el.tags && (el.tags['phone'] || el.tags['contact:phone'])) || '';
-                    const marker = L.marker([lat, lon]).addTo(pharmacyLayer);
-                    marker.bindPopup(`<strong>${name}</strong><br>${addr || ''}`);
-                    const gmaps = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-                    resultsEl.innerHTML += `
-                        <div class="result-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                                <div>
-                                    <div style="font-weight:600; color:#1976d2;">${name}</div>
-                                    ${addr ? `<div style="color:#555;">${addr}</div>` : ''}
-                                    ${phone ? `<div>📞 ${phone}</div>` : ''}
-                                </div>
-                                <div style="display:flex; gap:8px;">
-                                    <a class="btn btn-primary" href="${gmaps}" target="_blank">Directions</a>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-        }
-
-        document.getElementById('locateBtn').addEventListener('click', () => {
-            console.log('Locate button clicked');
-            if (!navigator.geolocation) {
-                alert('Geolocation not supported on this device.');
-                return;
-            }
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                console.log('Got location:', latitude, longitude);
-                setView(latitude, longitude);
-            }, (err) => {
-                console.error('Location error:', err);
-                alert('Location access denied or unavailable.');
-            }, { enableHighAccuracy: true, timeout: 10000 });
-        });
-
-        document.getElementById('searchBtn').addEventListener('click', async () => {
-            console.log('Search button clicked');
-            try {
-                resultsEl.innerHTML = '<div class="result-item">Searching pharmacies...</div>';
-                let centerLat, centerLon;
-                const place = document.getElementById('searchPlace').value.trim();
-                const radius = parseInt(document.getElementById('radius').value, 10);
-                
-                if (place) {
-                    console.log('Geocoding place:', place);
-                    const geo = await geocodePlace(place);
-                    console.log('Geocode result:', geo);
-                    setView(geo.lat, geo.lon);
-                    centerLat = geo.lat;
-                    centerLon = geo.lon;
-                } else {
-                    const center = map.getCenter();
-                    centerLat = center.lat;
-                    centerLon = center.lng;
-                    console.log('Using map center:', centerLat, centerLon);
-                }
-                
-                console.log('Finding pharmacies at:', centerLat, centerLon, 'radius:', radius);
-                const elements = await findPharmacies(centerLat, centerLon, radius);
-                console.log('Found pharmacies:', elements.length);
-                renderResults(elements);
-            } catch (e) {
-                console.error('Search error:', e);
-                resultsEl.innerHTML = `<div class="result-item" style="background:#ffebee; border-left:4px solid #d32f2f;">❌ Error: ${e.message}</div>`;
-            }
-        });
-
-        // Default view
-        map.setView([20.5937, 78.9629], 5); // India centroid
-    </script>
+    <script src="{{ url_for('static', filename='js/pharmacy_locator.js') }}"></script>
 </body>
 </html>

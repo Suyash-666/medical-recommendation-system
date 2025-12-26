@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>History - Medical Recommendation System</title>
+    <title>Medical History - Medical Recommendation System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
 </head>
 <body>
     <div class="dashboard-container">
@@ -27,12 +28,13 @@
                 <a href="{{ url_for('notifications') }}" class="btn btn-primary">🔔 Notifications & Alerts</a>
             </div>
             
-            {% if missing_index_url %}
-            <div class="alert alert-warning">
-                Firestore composite index required for ordered history.
-                <a href="{{ missing_index_url }}" target="_blank">Create Index</a> then refresh.
-            </div>
-            {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message|safe }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
             
             {% if history %}
                 <div class="history-grid">

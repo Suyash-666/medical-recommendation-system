@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications - Medical Recommendation System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
 </head>
 <body>
     <div class="dashboard-container">
@@ -21,11 +23,11 @@
         <main class="dashboard-content">
             <h2>🔔 Notifications & Alerts</h2>
             
-            <div style="max-width: 900px; margin: 0 auto;">
+            <div class="notifications-container">
                 <!-- Filter Options -->
-                <div class="form-box" style="margin-bottom: 30px;">
-                    <form method="GET" action="{{ url_for('notifications') }}" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
-                        <div class="form-group" style="flex: 1; min-width: 200px;">
+                <div class="form-box notifications-filter-box">
+                    <form method="GET" action="{{ url_for('notifications') }}" class="filter-form">
+                        <div class="form-group">
                             <label for="filter_type">Filter by Type</label>
                             <select id="filter_type" name="filter_type">
                                 <option value="all">All Notifications</option>
@@ -36,7 +38,7 @@
                             </select>
                         </div>
                         
-                        <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <div class="form-group">
                             <label for="filter_status">Status</label>
                             <select id="filter_status" name="filter_status">
                                 <option value="all">All</option>
@@ -45,59 +47,59 @@
                             </select>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary" style="margin-bottom: 16px;">Apply Filter</button>
-                        <form method="POST" action="{{ url_for('mark_all_read') }}" style="display: inline;">
-                            <button type="submit" class="btn btn-secondary" style="margin-bottom: 16px;">Mark All as Read</button>
-                        </form>
+                        <div class="filter-actions">
+                            <button type="submit" class="btn btn-primary">Apply Filter</button>
+                        </div>
+                    </form>
+                    <form method="POST" action="{{ url_for('mark_all_read') }}" class="filter-actions">
+                        <button type="submit" class="btn btn-secondary">Mark All as Read</button>
                     </form>
                 </div>
                 
                 <!-- Notifications List -->
                 {% if notifications %}
-                <div style="display: grid; gap: 15px;">
+                <div class="notifications-grid">
                     {% for notification in notifications %}
-                    <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; 
-                         background: {{ 'white' if notification.is_read else '#e3f2fd' }};
-                         border-left: 4px solid {{ '#d32f2f' if notification.priority == 'critical' else '#1976d2' if notification.priority == 'high' else '#4caf50' }};">
+                    <div class="notification-card {% if not notification.is_read %}unread{% endif %} {% if notification.priority %}priority-{{ notification.priority }}{% endif %}">
                         
-                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 15px;">
-                            <div style="flex: 1;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div class="notification-header">
+                            <div class="notification-content">
+                                <div class="notification-title-row">
                                     {% if notification.priority == 'critical' %}
-                                    <span style="font-size: 1.5em;">🚨</span>
+                                    <span class="notification-icon">🚨</span>
                                     {% elif notification.type == 'reminder' %}
-                                    <span style="font-size: 1.5em;">⏰</span>
+                                    <span class="notification-icon">⏰</span>
                                     {% elif notification.type == 'result' %}
-                                    <span style="font-size: 1.5em;">📊</span>
+                                    <span class="notification-icon">📊</span>
                                     {% elif notification.type == 'appointment' %}
-                                    <span style="font-size: 1.5em;">📅</span>
+                                    <span class="notification-icon">📅</span>
                                     {% else %}
-                                    <span style="font-size: 1.5em;">🔔</span>
+                                    <span class="notification-icon">🔔</span>
                                     {% endif %}
                                     
-                                    <h4 style="color: #1976d2; margin: 0;">{{ notification.title }}</h4>
+                                    <h4 class="notification-title">{{ notification.title }}</h4>
                                     
                                     {% if not notification.is_read %}
-                                    <span style="background: #1976d2; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">NEW</span>
+                                    <span class="notification-badge">NEW</span>
                                     {% endif %}
                                 </div>
                                 
-                                <p style="margin: 10px 0 10px 40px; color: #555; line-height: 1.6;">{{ notification.message }}</p>
+                                <p class="notification-message">{{ notification.message }}</p>
                                 
-                                <div style="margin-left: 40px; font-size: 0.9em; color: #999;">
+                                <div class="notification-meta">
                                     <span>📅 {{ notification.date }} at {{ notification.time }}</span>
                                 </div>
                             </div>
                             
-                            <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                            <div class="notification-actions">
                                 {% if not notification.is_read %}
-                                <form method="POST" action="{{ url_for('mark_notification_read', notification_id=notification.id) }}" style="display: inline;">
-                                    <button type="submit" style="background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; white-space: nowrap;">Mark Read</button>
+                                <form method="POST" action="{{ url_for('mark_notification_read', notification_id=notification.id) }}">
+                                    <button type="submit" class="btn-mark-read">Mark Read</button>
                                 </form>
                                 {% endif %}
                                 
-                                <form method="POST" action="{{ url_for('delete_notification', notification_id=notification.id) }}" style="display: inline;">
-                                    <button type="submit" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
+                                <form method="POST" action="{{ url_for('delete_notification', notification_id=notification.id) }}">
+                                    <button type="submit" class="btn-delete">Delete</button>
                                 </form>
                             </div>
                         </div>
@@ -107,12 +109,12 @@
                 
                 <!-- Pagination (if needed) -->
                 {% if total_pages > 1 %}
-                <div style="margin-top: 30px; text-align: center;">
+                <div class="pagination">
                     {% if current_page > 1 %}
                     <a href="{{ url_for('notifications', page=current_page-1) }}" class="btn btn-secondary">← Previous</a>
                     {% endif %}
                     
-                    <span style="margin: 0 15px;">Page {{ current_page }} of {{ total_pages }}</span>
+                    <span class="pagination-info">Page {{ current_page }} of {{ total_pages }}</span>
                     
                     {% if current_page < total_pages %}
                     <a href="{{ url_for('notifications', page=current_page+1) }}" class="btn btn-secondary">Next →</a>
@@ -121,12 +123,12 @@
                 {% endif %}
                 
                 {% else %}
-                <div class="no-records" style="text-align: center; padding: 40px; background: white; border-radius: 8px;">
-                    <p style="font-size: 1.2em; color: #999;">No notifications to display.</p>
+                <div class="no-notifications">
+                    <p>No notifications to display.</p>
                 </div>
                 {% endif %}
                 
-                <div style="margin-top: 30px; text-align: center;">
+                <div class="back-button-container">
                     <a href="{{ url_for('history') }}" class="btn btn-secondary">← Back to History</a>
                     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Dashboard</a>
                 </div>

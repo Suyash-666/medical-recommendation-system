@@ -1,0 +1,29 @@
+#map { 
+    height: 420px; 
+    width: 100%; 
+    border-radius: 8px; 
+}
+
+.results-list { 
+    margin-top: 15px; 
+}
+
+.result-item { 
+    background: white; 
+    border: 1px solid #e0e0e0; 
+    border-radius: 8px; 
+    padding: 12px; 
+    margin-bottom: 10px; 
+}
+
+.controls { 
+    display: flex; 
+    gap: 10px; 
+    flex-wrap: wrap; 
+    margin-bottom: 12px; 
+}
+
+.controls input, 
+.controls select { 
+    min-width: 180px; 
+}

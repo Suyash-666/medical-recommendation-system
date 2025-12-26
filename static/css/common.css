@@ -1,0 +1,115 @@
+/* Common utility styles for multiple pages */
+
+.centered-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.large-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.xl-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.info-box {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.info-box-small {
+    background: #e3f2fd;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.section-spacing {
+    margin-top: 30px;
+}
+
+.center-align {
+    text-align: center;
+}
+
+.back-to-dashboard {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.grid-container {
+    display: grid;
+    gap: 15px;
+}
+
+.specialist-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    background: white;
+}
+
+.specialist-name {
+    color: #1976d2;
+    margin-bottom: 10px;
+}
+
+.call-button {
+    margin-top: 10px;
+}
+
+.health-tip-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.health-tip-card h3 {
+    color: #1976d2;
+    margin: 0 0 8px 0;
+}
+
+.health-tip-card p {
+    color: #555;
+}
+
+.lab-analysis-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.analysis-summary-box {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.analysis-summary-text {
+    color: #555;
+    line-height: 1.8;
+}
+
+.abnormal-heading {
+    color: #d32f2f;
+}
+
+.abnormal-value {
+    color: #d32f2f;
+}
+
+.action-buttons {
+    margin-top: 20px;
+}
+
+.history-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}

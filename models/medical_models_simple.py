@@ -1,114 +1,164 @@
 """
-Simplified Medical Prediction Models (Quick Start Version)
-Implements basic prediction logic without heavy ML dependencies
+AI-Powered Medical Prediction Models
+Uses Google Gemini API for intelligent health analysis
 """
 import numpy as np
+import os
+import json
+import time
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
 
 class MedicalPredictor:
-    """Simplified medical predictor for quick demo"""
+    """AI-powered medical predictor using Google Gemini"""
     
     def __init__(self):
-        # Simplified predictor ready
-        self.trained = True
-    
-    def _analyze_health(self, features, symptoms=""):
-        """Advanced health analysis based on symptoms and vital signs"""
-        age, heart_rate = features
+        # Initialize Gemini API - Load from environment variables only
+        self.api_key = os.getenv('GEMINI_API_KEY')
         
-        # Store heart rate for later use in recommendations
+        if not self.api_key:
+            print("⚠️ ERROR: GEMINI_API_KEY not found in environment variables!")
+            print("AI predictions will NOT work without API key!")
+            self.trained = False
+            self.use_ai = False
+            self.model = None
+            return
+        
+        # Initialize Gemini AI
+        try:
+            genai.configure(api_key=self.api_key)
+            self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            print("✅ Gemini AI initialized successfully - 100% AI-powered predictions!")
+            self.trained = True
+            self.use_ai = True
+        except Exception as e:
+            print(f"⚠️ Gemini AI initialization failed: {e}")
+            self.trained = False
+            self.use_ai = False
+            self.model = None
+    
+    
+    def _analyze_health_with_ai(self, features, symptoms="", algorithm_name="General"):
+        """AI-powered health analysis using Gemini - simulates different algorithm perspectives"""
+        if not self.use_ai or not self.model:
+            raise Exception("❌ AI SERVICE UNAVAILABLE: Gemini API not initialized. Check GEMINI_API_KEY in .env file.")
+        
+        # Billing enabled - no rate limit delays needed for faster predictions
+        
+        age, heart_rate = features
         self._last_heart_rate = heart_rate
         
-        # Convert symptoms to lowercase for analysis
-        symptoms_lower = symptoms.lower()
+        print(f"\n🤖 GEMINI AI ANALYSIS ({algorithm_name}):")
+        print(f"  Age: {age}, Heart Rate: {heart_rate} bpm")
+        print(f"  Symptoms: '{symptoms}'")
         
-        # Initialize risk assessment
-        risk_score = 0
-        detected_conditions = []
-        
-        # Critical symptoms analysis
-        critical_symptoms = {
-            'chest pain': 3,
-            'severe headache': 3,
-            'difficulty breathing': 3,
-            'shortness of breath': 3,
-            'unconscious': 3,
-            'seizure': 3,
-            'stroke': 3,
-            'heart attack': 3,
-            'severe bleeding': 3,
-            'paralysis': 3
+        # Algorithm-specific analysis approach
+        algorithm_focus = {
+            "SVC": "Using Support Vector Machine approach, focus on finding optimal decision boundaries and margin separation between health states. Consider kernel transformations.",
+            "Random Forest": "Using ensemble decision tree approach, analyze multiple decision paths and vote on outcomes. Focus on feature importance and tree consensus.",
+            "CNN": "Using deep learning pattern recognition, analyze symptom patterns through convolutional filters and neural layers. Focus on hidden health patterns.",
+            "RBM": "Using probabilistic neural network approach, analyze energy states and probability distributions. Focus on unsupervised pattern learning."
         }
         
-        # Moderate symptoms analysis
-        moderate_symptoms = {
-            'fever': 1,
-            'cough': 1,
-            'fatigue': 1,
-            'dizziness': 2,
-            'nausea': 1,
-            'vomiting': 2,
-            'headache': 1,
-            'body pain': 1,
-            'weakness': 1,
-            'sweating': 1,
-            'palpitation': 2,
-            'irregular heartbeat': 2,
-            'numbness': 2,
-            'confusion': 2,
-            'anxiety': 1,
-            'insomnia': 1,
-            'back pain': 1,
-            'joint pain': 1,
-            'stomach pain': 2,
-            'loss of appetite': 1,
-            'weight loss': 2,
-            'blurred vision': 2
-        }
+        analysis_approach = algorithm_focus.get(algorithm_name, "Perform general medical analysis")
         
-        # Check for critical symptoms
-        for symptom, score in critical_symptoms.items():
-            if symptom in symptoms_lower:
-                risk_score += score
-                detected_conditions.append(symptom)
+        prompt = f"""You are an expert medical AI diagnostician simulating a {algorithm_name} algorithm analysis. 
+
+**ALGORITHM PERSPECTIVE:**
+{analysis_approach}
+
+**PATIENT DATA:**
+- Age: {age} years
+- Heart Rate: {heart_rate} bpm
+- Reported Symptoms: {symptoms if symptoms else "None reported"}
+
+**YOUR TASK:**
+Analyze this patient case from the perspective of a {algorithm_name} algorithm and provide a risk assessment.
+
+Classify into ONE of these risk levels:
+- **0 = Healthy** - No concerning symptoms, vital signs normal, routine care only
+- **1 = At Risk** - Concerning symptoms requiring medical attention within 24-48 hours
+- **2 = Critical** - Life-threatening symptoms requiring IMMEDIATE emergency care
+
+**CRITICAL GUIDELINES:**
+- Chest pain, difficulty breathing, stroke signs → ALWAYS Level 2 (Critical)
+- Severe pain (testicular, abdominal), high fever, neurological symptoms → ALWAYS Level 1 (At Risk minimum)
+- Prioritize symptoms OVER vital signs (symptoms are more important!)
+- Be conservative - when in doubt, classify higher risk
+- {algorithm_name} algorithms may have slight variations in confidence and detected patterns
+
+**RESPONSE FORMAT (JSON only, no markdown):**
+{{
+    "risk_level": 0 or 1 or 2,
+    "confidence": 0.XX (between 0.85-0.98, vary slightly for each algorithm),
+    "detected_conditions": ["condition1", "condition2"],
+    "reasoning": "Brief explanation from {algorithm_name} perspective",
+    "algorithm_specific_notes": "What makes this {algorithm_name} analysis unique"
+}}
+
+Provide ONLY the JSON response, no additional text."""
+
+        try:
+            response = self.model.generate_content(prompt)
+            result_text = response.text.strip().replace('```json', '').replace('```', '').strip()
+            result = json.loads(result_text)
+            
+            risk_level = int(result.get('risk_level', 0))
+            confidence = float(result.get('confidence', 0.90))
+            conditions = result.get('detected_conditions', [])
+            reasoning = result.get('reasoning', '')
+            algo_notes = result.get('algorithm_specific_notes', '')
+            
+            print(f"  🎯 AI Result: Risk Level {risk_level}, Confidence {confidence*100:.1f}%")
+            print(f"  📋 Conditions: {', '.join(conditions) if conditions else 'None'}")
+            print(f"  💭 Reasoning: {reasoning}")
+            print(f"  🔬 {algorithm_name} Notes: {algo_notes}")
+            
+            return risk_level, confidence, conditions
+            
+        except Exception as e:
+            error_msg = f"AI Analysis Error: {type(e).__name__}: {str(e)}"
+            print(f"  ❌ {error_msg}")
+            
+            if "429" in str(e) or "quota" in str(e).lower():
+                raise Exception(f"❌ QUOTA EXCEEDED: Too many requests to Gemini API. Wait 60 seconds and try again. ({e})")
+            elif "404" in str(e):
+                raise Exception(f"❌ MODEL NOT FOUND: Invalid Gemini model name. Check model configuration. ({e})")
+            else:
+                raise Exception(f"❌ AI FAILED: {error_msg}")
+    
+    
+    def _analyze_health_fallback(self, features, symptoms=""):
+        """Emergency fallback only when AI completely fails"""
+        print("⚠️ FALLBACK MODE - AI unavailable")
+        age, heart_rate = features
+        self._last_heart_rate = heart_rate
         
-        # Check for moderate symptoms
-        for symptom, score in moderate_symptoms.items():
-            if symptom in symptoms_lower:
-                risk_score += score
-                detected_conditions.append(symptom)
+        # Minimal emergency detection
+        symptoms_lower = symptoms.lower() if symptoms else ""
         
-        # Heart rate analysis
-        if heart_rate > 120:
-            risk_score += 3
-            detected_conditions.append('very high heart rate')
-        elif heart_rate > 100:
-            risk_score += 2
-            detected_conditions.append('elevated heart rate')
-        elif heart_rate < 50:
-            risk_score += 2
-            detected_conditions.append('very low heart rate')
-        elif heart_rate < 60:
-            risk_score += 1
-            detected_conditions.append('low heart rate')
-        
-        # Age factor analysis
-        if age > 65:
-            risk_score += 2
-        elif age > 55:
-            risk_score += 1
-        
-        # Determine health status based on comprehensive analysis
-        if risk_score >= 5 or any(s in symptoms_lower for s in ['chest pain', 'difficulty breathing', 'severe']):
-            return 2, np.random.uniform(0.85, 0.95), detected_conditions  # Critical
-        elif risk_score >= 2:
-            return 1, np.random.uniform(0.78, 0.90), detected_conditions  # At Risk
+        if any(word in symptoms_lower for word in ['chest pain', 'difficulty breathing', 'unconscious', 'stroke']):
+            return 2, 0.90, ['emergency symptom detected']
+        elif any(word in symptoms_lower for word in ['severe', 'pain', 'fever', 'bleeding']):
+            return 1, 0.85, ['concerning symptom detected']
         else:
-            return 0, np.random.uniform(0.88, 0.98), detected_conditions  # Healthy
+            return 0, 0.80, []
+    
+    def _analyze_health(self, features, symptoms="", algorithm_name="General"):
+        """Main analysis method - 100% AI ONLY with algorithm-specific analysis"""
+        return self._analyze_health_with_ai(features, symptoms, algorithm_name)
     
     def predict_svc(self, features, symptoms=""):
-        """SVC model prediction with symptom analysis"""
-        prediction, base_conf, conditions = self._analyze_health(features, symptoms)
-        confidence = base_conf * np.random.uniform(0.96, 1.0)
+        """SVC model prediction with AI analysis from SVC perspective"""
+        prediction, base_conf, conditions = self._analyze_health(features, symptoms, "SVC")
+        confidence = base_conf
         
         # Generate analysis steps
         analysis = {
@@ -128,9 +178,9 @@ class MedicalPredictor:
         return prediction, confidence, conditions, analysis
     
     def predict_random_forest(self, features, symptoms=""):
-        """Random Forest model prediction with symptom analysis"""
-        prediction, base_conf, conditions = self._analyze_health(features, symptoms)
-        confidence = base_conf * np.random.uniform(0.94, 0.99)
+        """Random Forest model prediction with AI analysis from Random Forest perspective"""
+        prediction, base_conf, conditions = self._analyze_health(features, symptoms, "Random Forest")
+        confidence = base_conf
         
         # Generate analysis steps
         analysis = {
@@ -150,9 +200,9 @@ class MedicalPredictor:
         return prediction, confidence, conditions, analysis
     
     def predict_cnn(self, features, symptoms=""):
-        """CNN model prediction with symptom analysis"""
-        prediction, base_conf, conditions = self._analyze_health(features, symptoms)
-        confidence = base_conf * np.random.uniform(0.90, 0.97)
+        """CNN model prediction with AI analysis from CNN perspective"""
+        prediction, base_conf, conditions = self._analyze_health(features, symptoms, "CNN")
+        confidence = base_conf
         
         # Generate analysis steps
         analysis = {
@@ -172,9 +222,9 @@ class MedicalPredictor:
         return prediction, confidence, conditions, analysis
     
     def predict_rbm(self, features, symptoms=""):
-        """RBM model prediction with symptom analysis"""
-        prediction, base_conf, conditions = self._analyze_health(features, symptoms)
-        confidence = base_conf * np.random.uniform(0.92, 0.98)
+        """RBM model prediction with AI analysis from RBM perspective"""
+        prediction, base_conf, conditions = self._analyze_health(features, symptoms, "RBM")
+        confidence = base_conf
         
         # Generate analysis steps
         analysis = {
@@ -194,182 +244,124 @@ class MedicalPredictor:
         return prediction, confidence, conditions, analysis
     
     def get_recommendation(self, prediction, confidence, symptoms="", detected_conditions=None):
-        """Generate health recommendations with description, precautions, medications, and diet based on symptoms"""
+        """Generate AI-powered health recommendations - 100% AI ONLY"""
+        if not self.use_ai or not self.model:
+            raise Exception("❌ AI SERVICE UNAVAILABLE: Cannot generate recommendations without Gemini API.")
         
-        # Analyze symptoms for targeted recommendations
-        symptoms_lower = symptoms.lower() if symptoms else ""
+        # Billing enabled - no rate limit delays needed
+        
         conditions_str = ", ".join(detected_conditions) if detected_conditions else "none detected"
+        status = ['Healthy', 'At Risk', 'Critical'][prediction]
+        heart_rate = getattr(self, '_last_heart_rate', 'N/A')
         
-        # Detect specific disease based on symptoms
-        disease = self._identify_disease(symptoms_lower)
-        
-        # Get disease-specific recommendations
-        if disease:
-            result = self._get_disease_specific_recommendations(disease, symptoms_lower, conditions_str)
-            # Add heart rate context if available
-            if hasattr(self, '_last_heart_rate'):
-                result['heart_rate_note'] = self._get_heart_rate_interpretation(self._last_heart_rate)
+        prompt = f"""You are a medical AI providing personalized health recommendations.
+
+**PATIENT ASSESSMENT:**
+- Risk Status: {status} (Level {prediction})
+- AI Confidence: {confidence*100:.1f}%
+- Heart Rate: {heart_rate} bpm
+- Detected Conditions: {conditions_str}
+- Reported Symptoms: {symptoms if symptoms else "None"}
+
+**YOUR TASK:**
+Create detailed, actionable health recommendations based on the patient's condition.
+
+**URGENCY RULES:**
+- Level 2 (Critical): EMERGENCY - Include 🚨, advise IMMEDIATE medical care (ER/911)
+- Level 1 (At Risk): URGENT - Advise same-day or next-day medical consultation
+- Level 0 (Healthy): PREVENTIVE - Focus on maintaining health and prevention
+
+**RESPONSE FORMAT (JSON only):**
+{{
+    "status": "{status}",
+    "description": "2-3 sentences explaining the patient's condition and urgency level. Be specific about symptoms found.",
+    "precautions": [
+        "precaution 1 - be specific and actionable",
+        "precaution 2",
+        "precaution 3",
+        "precaution 4",
+        "precaution 5"
+    ],
+    "medications": [
+        "medication/treatment advice 1 (always recommend consulting doctor before taking any medication)",
+        "medication/treatment advice 2",
+        "medication/treatment advice 3",
+        "medication/treatment advice 4"
+    ],
+    "diet": [
+        "dietary recommendation 1 based on condition",
+        "dietary recommendation 2",
+        "dietary recommendation 3",
+        "dietary recommendation 4",
+        "dietary recommendation 5"
+    ]
+}}
+
+**IMPORTANT:**
+- For Critical status: Start with 🚨 and emphasize IMMEDIATE action
+- Always advise consulting healthcare professionals
+- Be specific to the detected conditions
+- Provide 4-6 items per category
+- Use clear, actionable language
+
+Provide ONLY the JSON response, no markdown code blocks."""
+
+        try:
+            response = self.model.generate_content(prompt)
+            result_text = response.text.strip().replace('```json', '').replace('```', '').strip()
+            result = json.loads(result_text)
+            
+            # Add heart rate interpretation
+            if heart_rate != 'N/A':
+                result['heart_rate_note'] = self._get_heart_rate_interpretation(heart_rate)
+            
+            print(f"✅ AI Recommendations generated successfully")
             return result
+            
+        except Exception as e:
+            error_msg = f"AI Recommendation Error: {type(e).__name__}: {str(e)}"
+            print(f"❌ {error_msg}")
+            
+            if "429" in str(e) or "quota" in str(e).lower():
+                raise Exception(f"❌ QUOTA EXCEEDED: Too many requests to Gemini API. Wait 60 seconds and try again. ({e})")
+            elif "404" in str(e):
+                raise Exception(f"❌ MODEL NOT FOUND: Invalid Gemini model name. Check configuration. ({e})")
+            else:
+                raise Exception(f"❌ AI RECOMMENDATION FAILED: {error_msg}")
+    
+    
+    def _get_recommendation_fallback(self, prediction, confidence, symptoms="", detected_conditions=None):
+        """Emergency fallback when AI is completely unavailable"""
+        print("⚠️ Using emergency fallback recommendations (AI unavailable)")
         
-        # Base recommendations for general conditions
-        base_recommendations = {
+        fallback_recs = {
             0: {
                 'status': 'Healthy',
-                'description': f'Based on your vital signs and reported symptoms, you appear to be in good health. Your heart rate is normal and no critical symptoms were detected. However, we identified: {conditions_str}. Continue maintaining your healthy lifestyle.',
-                'precautions': [
-                    'Get regular health checkups every 6-12 months',
-                    'Monitor your heart rate during physical activities',
-                    'Stay hydrated (8-10 glasses of water daily)',
-                    'Maintain consistent sleep schedule (7-8 hours)',
-                    'Practice stress management (meditation, yoga)',
-                    'Avoid smoking and limit alcohol consumption'
-                ],
-                'medications': [
-                    'No specific medications required at this time',
-                    'Consider daily multivitamin supplements',
-                    'Omega-3 fatty acids for heart health (consult doctor)',
-                    'Vitamin D if deficient (after blood test)',
-                    'Pain relievers like Acetaminophen for minor aches (as needed)'
-                ],
-                'diet': [
-                    'Balanced diet with 5 servings of fruits/vegetables daily',
-                    'Whole grains (brown rice, quinoa, oats)',
-                    'Lean proteins (chicken, fish, legumes)',
-                    'Healthy fats (avocado, nuts, olive oil)',
-                    'Limit processed foods and added sugars',
-                    'Reduce sodium intake (<2300mg/day)',
-                    'Stay hydrated with water, avoid sugary drinks',
-                    'Include calcium-rich foods (dairy, leafy greens)'
-                ]
+                'description': 'Basic health check complete. AI unavailable for detailed analysis.',
+                'precautions': ['Schedule regular checkups', 'Monitor your health', 'Consult doctor if symptoms appear'],
+                'medications': ['Consult healthcare provider before taking any medication'],
+                'diet': ['Maintain balanced diet', 'Stay hydrated', 'Regular exercise']
             },
             1: {
                 'status': 'At Risk',
-                'description': f'Your health indicators show concerning patterns. Detected conditions: {conditions_str}. You are at moderate to high risk and require medical evaluation. The combination of your vital signs and symptoms suggests you should not delay seeking professional medical advice.',
-                'precautions': [
-                    '⚠️ Schedule doctor appointment within 2-3 days',
-                    'Monitor heart rate 3 times daily and log readings',
-                    'Avoid strenuous activities until cleared by doctor',
-                    'Get adequate rest (8 hours minimum)',
-                    'Avoid stress and practice relaxation techniques',
-                    'Stop smoking immediately if applicable',
-                    'Limit alcohol consumption',
-                    'Keep emergency contacts readily available',
-                    'Inform family/friends about your symptoms'
-                ],
-                'medications': [
-                    '⚠️ Consult doctor before taking any medication',
-                    'May need diagnostic tests (ECG, blood work)',
-                    'Possible prescription for heart rate management',
-                    'Aspirin therapy (only if prescribed - 75-100mg daily)',
-                    'Beta-blockers if heart rate elevated (prescription only)',
-                    'Pain management as prescribed',
-                    'Anti-anxiety medication if needed (prescription)',
-                    'Keep all current medications list ready for doctor'
-                ],
-                'diet': [
-                    'Low-sodium diet (less than 1500mg/day)',
-                    'Heart-healthy DASH diet principles',
-                    'Increase potassium (bananas, sweet potatoes, spinach)',
-                    'Reduce or eliminate caffeine intake',
-                    'Avoid all processed and fried foods',
-                    'High-fiber foods (oats, beans, vegetables)',
-                    'Omega-3 rich foods (salmon, walnuts, flaxseed)',
-                    'Limit red meat (max 1-2 times/week)',
-                    'No sugary drinks or desserts',
-                    'Small, frequent meals (5-6 per day)',
-                    'Avoid heavy meals before bedtime'
-                ]
+                'description': 'Concerning symptoms detected. CONSULT A DOCTOR SOON. (AI unavailable for detailed analysis)',
+                'precautions': ['Schedule doctor appointment within 24-48 hours', 'Monitor symptoms closely', 'Seek care if worsening'],
+                'medications': ['DO NOT self-medicate', 'Consult doctor for proper diagnosis and treatment'],
+                'diet': ['Follow general healthy diet', 'Stay hydrated', 'Avoid alcohol']
             },
             2: {
                 'status': 'Critical',
-                'description': f'🚨 URGENT: Your symptoms and vital signs indicate a critical health condition. Detected: {conditions_str}. This requires IMMEDIATE medical attention. Do not delay - seek emergency medical care now. Call emergency services or go to the nearest emergency room immediately.',
-                'precautions': [
-                    '🚨🚨 SEEK EMERGENCY MEDICAL ATTENTION IMMEDIATELY 🚨🚨',
-                    'Call emergency services (911) if symptoms worsen',
-                    'Do NOT drive yourself - call ambulance or get help',
-                    'Have someone stay with you at all times',
-                    'Keep emergency contacts and medications list ready',
-                    'Sit or lie down in comfortable position',
-                    'Loosen tight clothing',
-                    'Do not eat or drink anything (unless prescribed)',
-                    'Note exact time symptoms started',
-                    'Prepare insurance/ID cards for hospital',
-                    'Avoid all physical activities',
-                    'Stay calm and try to breathe slowly'
-                ],
-                'medications': [
-                    '🚨 DO NOT SELF-MEDICATE - EMERGENCY DOCTOR CONSULTATION REQUIRED',
-                    'Follow ONLY prescribed emergency medications',
-                    'May need immediate cardiac intervention',
-                    'Possible emergency medications (administered by medical staff):',
-                    '  - Nitroglycerin for chest pain (if prescribed)',
-                    '  - Aspirin 325mg (only if told by emergency dispatcher)',
-                    '  - Emergency intravenous medications',
-                    'Bring ALL current medications to hospital',
-                    'Inform doctors of all allergies and current drugs',
-                    'Do not take new medications without doctor approval'
-                ],
-                'diet': [
-                    '🚨 Follow hospital/doctor dietary instructions strictly',
-                    'Nothing by mouth until cleared by medical team',
-                    'Once cleared, very light, bland diet only',
-                    'Clear liquids initially (water, clear broth)',
-                    'Extremely low sodium (<1000mg/day)',
-                    'Small portions, easily digestible foods',
-                    'Avoid all solid foods initially',
-                    'No caffeine, alcohol, or stimulants',
-                    'No spicy, fatty, or heavy foods',
-                    'Follow prescribed meal plan from hospital',
-                    'Nutritionist consultation recommended',
-                    'Keep detailed food diary for medical review'
-                ]
+                'description': '🚨 EMERGENCY: Severe symptoms detected. SEEK IMMEDIATE MEDICAL CARE. Call emergency services.',
+                'precautions': ['🚨 CALL 911 or go to nearest ER NOW', 'Do NOT drive yourself', 'Have someone stay with you'],
+                'medications': ['🚨 Follow emergency medical guidance ONLY', 'Bring current medications list to hospital'],
+                'diet': ['Follow hospital instructions', 'Nothing by mouth until cleared by medical staff']
             }
         }
         
-        result = base_recommendations.get(prediction, base_recommendations[1])
-        
-        # Add symptom-specific recommendations
-        if 'chest pain' in symptoms_lower or 'heart' in symptoms_lower:
-            if prediction >= 1:
-                result['precautions'].insert(1, '🚨 If chest pain worsens, call emergency immediately')
-                result['medications'].insert(1, 'Aspirin may be recommended (consult doctor first)')
-        
-        if 'fever' in symptoms_lower:
-            result['medications'].append('Acetaminophen/Paracetamol for fever (follow dosage)')
-            result['diet'].append('Increase fluid intake, warm soups and broths')
-        
-        if 'cough' in symptoms_lower:
-            result['medications'].append('Cough suppressant or expectorant (as needed)')
-            result['precautions'].append('Cover mouth when coughing, maintain hygiene')
-        
-        if 'headache' in symptoms_lower or 'dizziness' in symptoms_lower:
-            result['precautions'].append('Avoid bright lights and loud noises')
-            result['diet'].append('Stay well hydrated, avoid triggers like MSG')
-        
-        if 'fatigue' in symptoms_lower or 'weakness' in symptoms_lower:
-            result['diet'].append('Iron-rich foods (spinach, red meat, lentils)')
-            result['precautions'].append('Ensure adequate rest and avoid overexertion')
-        
+        result = fallback_recs.get(prediction, fallback_recs[1])
+        if hasattr(self, '_last_heart_rate'):
+            result['heart_rate_note'] = f"Heart rate: {self._last_heart_rate} bpm (normal: 60-100 bpm)"
         return result
-    
-    def _identify_disease(self, symptoms):
-        """Identify specific disease based on symptoms"""
-        symptom_diseases = {
-            'vomiting': 'Gastroenteritis',
-            'nausea': 'Gastroenteritis',
-            'diarrhea': 'Gastroenteritis',
-            'stomach pain': 'Gastroenteritis',
-            'fever': 'Viral Infection',
-            'cough': 'Respiratory Infection',
-            'headache': 'Migraine',
-            'chest pain': 'Cardiac Issue',
-            'shortness of breath': 'Respiratory Distress'
-        }
-        
-        for symptom, disease in symptom_diseases.items():
-            if symptom in symptoms:
-                return disease
-        return None
     
     def _get_heart_rate_interpretation(self, heart_rate):
         """Provide personalized heart rate interpretation"""
@@ -381,105 +373,4 @@ class MedicalPredictor:
             return f"A heart rate of {heart_rate} bpm is above the normal range (60-100 bpm). Consider consulting a healthcare professional."
         else:
             return f"Your heart rate is {heart_rate} bpm. Normal adult range is 60-100 bpm."
-    
-    def _get_disease_specific_recommendations(self, disease, symptoms, conditions_str):
-        """Get detailed recommendations for specific diseases"""
-        
-        # Get heart rate note if available
-        heart_rate_note = ""
-        if hasattr(self, '_last_heart_rate'):
-            heart_rate_note = " " + self._get_heart_rate_interpretation(self._last_heart_rate)
-        
-        disease_recommendations = {
-            'Gastroenteritis': {
-                'status': 'Possible Condition',
-                'disease': 'Gastroenteritis',
-                'description': 'Gastroenteritis is an inflammation of the stomach and intestines, typically caused by a virus or bacteria.' + heart_rate_note,
-                'precautions': [
-                    'Stop eating solid food for a while',
-                    'Try taking small sips of water',
-                    'Rest',
-                    'Ease back into eating'
-                ],
-                'medications': [
-                    'Antibiotics - Only if prescribed by doctor',
-                    'Antiemetic drugs - Consult healthcare professional',
-                    'Antidiarrheal drugs - Use after medical advice',
-                    'IV fluids - If severe, seek emergency care'
-                ],
-                'diet': [
-                    'Bland Diet',
-                    'Bananas',
-                    'Rice',
-                    'Applesauce'
-                ]
-            },
-            'Viral Infection': {
-                'status': 'Possible Condition',
-                'disease': 'Viral Infection',
-                'description': 'Common viral infection affecting the body. Consult a doctor for proper diagnosis.' + heart_rate_note,
-                'precautions': [
-                    'Get plenty of rest',
-                    'Stay isolated to prevent spread',
-                    'Wash hands frequently',
-                    'Monitor temperature regularly'
-                ],
-                'medications': [
-                    'Consult doctor before taking any medication',
-                    'Paracetamol - Only if needed for fever (after consulting doctor)',
-                    'Stay hydrated with water and electrolytes',
-                    'Avoid self-medication'
-                ],
-                'diet': [
-                    'Warm soups',
-                    'Citrus fruits',
-                    'Ginger tea',
-                    'Plenty of water'
-                ]
-            },
-            'Respiratory Infection': {
-                'status': 'Possible Condition',
-                'disease': 'Respiratory Infection',
-                'description': 'Infection affecting the respiratory system. Seek medical advice for proper treatment.' + heart_rate_note,
-                'precautions': [
-                    'Rest and avoid strenuous activity',
-                    'Use humidifier for comfort',
-                    'Cover mouth when coughing',
-                    'Consult doctor if symptoms worsen'
-                ],
-                'medications': [
-                    'See a healthcare provider',
-                    'Do not self-prescribe antibiotics',
-                    'Follow medical guidance',
-                    'Over-the-counter relief only as directed'
-                ],
-                'diet': [
-                    'Warm liquids',
-                    'Honey and lemon',
-                    'Ginger tea',
-                    'Plenty of water'
-                ]
-            }
-        }
-        
-        return disease_recommendations.get(disease, self._get_default_recommendations(conditions_str))
-    
-    def _get_default_recommendations(self, conditions_str):
-        """Default recommendations when no specific disease identified"""
-        return {
-            'status': 'General Assessment',
-            'disease': 'General Health Concern',
-            'description': 'Based on your symptoms, consult a healthcare professional for proper assessment.',
-            'precautions': [
-                'Consult a healthcare professional',
-                'Monitor your symptoms',
-                'Get adequate rest'
-            ],
-            'medications': [
-                'Consult doctor for treatment'
-            ],
-            'diet': [
-                'Balanced diet',
-                'Plenty of fluids'
-            ]
-        }
+
