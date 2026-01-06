@@ -533,42 +533,25 @@ def predict():
         features = [age, heart_rate]
         
         try:
-            # Run all 4 AI models and collect their analysis
-            predictions = []
-            confidences = []
-            all_conditions = []
-            algorithm_analyses = []
-            
-            # Get predictions from all models with detailed analysis
+            # Run a single ML prediction to reduce memory/timeout risk
             pred_svc, conf_svc, cond_svc, analysis_svc = predictor.predict_svc(features, symptoms)
-            pred_rf, conf_rf, cond_rf, analysis_rf = predictor.predict_random_forest(features, symptoms)
-            pred_cnn, conf_cnn, cond_cnn, analysis_cnn = predictor.predict_cnn(features, symptoms)
-            pred_rbm, conf_rbm, cond_rbm, analysis_rbm = predictor.predict_rbm(features, symptoms)
-            
-            predictions = [pred_svc, pred_rf, pred_cnn, pred_rbm]
-            confidences = [conf_svc, conf_rf, conf_cnn, conf_rbm]
-            algorithm_analyses = [analysis_svc, analysis_rf, analysis_cnn, analysis_rbm]
-            
-            # Combine all detected conditions
-            all_conditions = list(set(cond_svc + cond_rf + cond_cnn + cond_rbm))
-            
-            # Ensemble prediction - use majority vote (handle string vs int predictions)
-            # Filter out any "Uncertain" predictions and use only numeric predictions for majority vote
-            numeric_predictions = [p for p in predictions if isinstance(p, int)]
-            
-            if numeric_predictions:
-                prediction = max(set(numeric_predictions), key=numeric_predictions.count)
-            else:
-                # If all are "Uncertain", keep the first one
-                prediction = predictions[0]
-            
-            confidence = sum(confidences) / len(confidences)  # Average confidence
-            
+
+            predictions = [pred_svc]
+            confidences = [conf_svc]
+            algorithm_analyses = [analysis_svc]
+
+            # Combine detected conditions from the single model
+            all_conditions = list(set(cond_svc))
+
+            # Use the single model output directly (handle "Uncertain" strings)
+            prediction = pred_svc
+            confidence = conf_svc
+
             # Get comprehensive recommendations
             recommendation_data = predictor.get_recommendation(prediction, confidence, symptoms, all_conditions)
-            
+
         except Exception as e:
-            # AI failed - show flash message and redirect back with form data preserved
+            # ML failed - show flash message and redirect back with form data preserved
             error_message = str(e)
             print(f"\n[ERROR] PREDICTION FAILED: {error_message}\n")
             flash(f"AI Service Error: {error_message}. Please try again.", 'error')
@@ -590,7 +573,7 @@ def predict():
             recommendation = {
                 'user_id': session['user_id'],
                 'record_id': record_id,
-                'model_used': 'Ensemble (All 4 Models)',
+                'model_used': 'TensorFlow SVC Emulation (single model)',
                 'prediction': recommendation_data['status'],
                 'confidence': confidence,
                 'recommendations': recommendation_data['diet'] + recommendation_data['precautions'],
