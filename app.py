@@ -13,6 +13,11 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from database.db_config import init_firebase, get_db
+
+# Disable GPU/CUDA to avoid startup delays and missing driver checks on Render
+os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
+os.environ.setdefault('CUDA_VISIBLE_DEVICES', '-1')
+
 from models.medical_models_simple import MedicalPredictor
 
 app = Flask(__name__)
@@ -45,9 +50,24 @@ except ImportError:
 except Exception as e:
     print(f"[WARN] Gemini initialization failed: {e} - using fallback data")
 
-# Initialize predictor ONCE (TensorFlow-based, for predictions only)
+# Lazy-load TensorFlow predictor ONCE per worker to avoid repeated initialization
 print("[INFO] Using TensorFlow neural network for predictions")
-predictor = MedicalPredictor()
+_predictor = None
+_predictor_error = None
+
+
+def get_predictor():
+    """Return a singleton predictor instance per worker."""
+    global _predictor, _predictor_error
+    if _predictor is None and _predictor_error is None:
+        try:
+            _predictor = MedicalPredictor()
+        except Exception as exc:
+            _predictor_error = exc
+            raise
+    if _predictor_error:
+        raise _predictor_error
+    return _predictor
 
 def get_db_connection():
     """Get Firestore database connection (raises if unavailable)."""
@@ -484,55 +504,56 @@ def predict():
         flash('Please login first', 'error')
         return redirect(url_for('login'))
     
-    print("\n" + "="*60)
-    print("PREDICT ROUTE CALLED")
-    print(f"Method: {request.method}")
-    print("="*60)
-    
     if request.method == 'POST':
-        print("\n[DEBUG] POST REQUEST RECEIVED!")
-        # Get form data with validation
+        print("\n" + "="*60)
+        print("PREDICT ROUTE CALLED")
+        print(f"Method: {request.method}")
+        print("="*60)
+
         try:
-            age = int(request.form.get('age', 0))
-            gender = request.form.get('gender', '').strip()
-            heart_rate = int(request.form.get('heart_rate', 0))
-            symptoms = request.form.get('symptoms', '').strip()
+            # Get form data with validation
+            try:
+                age = int(request.form.get('age', 0))
+                gender = request.form.get('gender', '').strip()
+                heart_rate = int(request.form.get('heart_rate', 0))
+                symptoms = request.form.get('symptoms', '').strip()
+                
+                # Validate inputs
+                if not age or age < 1 or age > 120:
+                    flash('Please enter a valid age (1-120)', 'error')
+                    return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+                
+                if not gender:
+                    flash('Please select a gender', 'error')
+                    return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+                
+                if not heart_rate or heart_rate < 40 or heart_rate > 200:
+                    flash('Please enter a valid heart rate (40-200 bpm)', 'error')
+                    return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+                
+                if not symptoms:
+                    flash('Please describe your symptoms', 'error')
+                    return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
             
-            # Validate inputs
-            if not age or age < 1 or age > 120:
-                flash('Please enter a valid age (1-120)', 'error')
-                return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+            except ValueError as e:
+                flash('Please enter valid numbers for age and heart rate', 'error')
+                return render_template('predict.html', age=request.form.get('age'), gender=request.form.get('gender'), 
+                                     heart_rate=request.form.get('heart_rate'), symptoms=request.form.get('symptoms'))
             
-            if not gender:
-                flash('Please select a gender', 'error')
-                return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+            # Debug output
+            print(f"\n[DEBUG] DEBUG - Received form data:")
+            print(f"  Age: {age}")
+            print(f"  Gender: {gender}")
+            print(f"  Heart Rate: {heart_rate}")
+            print(f"  Symptoms: '{symptoms}' (length: {len(symptoms)})")
+            print(f"  Symptoms empty? {not symptoms}")
+            print("="*60 + "\n")
             
-            if not heart_rate or heart_rate < 40 or heart_rate > 200:
-                flash('Please enter a valid heart rate (40-200 bpm)', 'error')
-                return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+            # Prepare features for prediction (simplified to 2 features)
+            features = [age, heart_rate]
+
+            predictor = get_predictor()
             
-            if not symptoms:
-                flash('Please describe your symptoms', 'error')
-                return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
-        
-        except ValueError as e:
-            flash('Please enter valid numbers for age and heart rate', 'error')
-            return render_template('predict.html', age=request.form.get('age'), gender=request.form.get('gender'), 
-                                 heart_rate=request.form.get('heart_rate'), symptoms=request.form.get('symptoms'))
-        
-        # Debug output
-        print(f"\n[DEBUG] DEBUG - Received form data:")
-        print(f"  Age: {age}")
-        print(f"  Gender: {gender}")
-        print(f"  Heart Rate: {heart_rate}")
-        print(f"  Symptoms: '{symptoms}' (length: {len(symptoms)})")
-        print(f"  Symptoms empty? {not symptoms}")
-        print("="*60 + "\n")
-        
-        # Prepare features for prediction (simplified to 2 features)
-        features = [age, heart_rate]
-        
-        try:
             # Run a single ML prediction to reduce memory/timeout risk
             pred_svc, conf_svc, cond_svc, analysis_svc = predictor.predict_svc(features, symptoms)
 
@@ -555,8 +576,7 @@ def predict():
             error_message = str(e)
             print(f"\n[ERROR] PREDICTION FAILED: {error_message}\n")
             flash(f"AI Service Error: {error_message}. Please try again.", 'error')
-            return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
-        
+            return render_template('predict.html', age=request.form.get('age'), gender=request.form.get('gender'), heart_rate=request.form.get('heart_rate'), symptoms=request.form.get('symptoms'))
         # Save to database
         try:
             db = get_db_connection()
