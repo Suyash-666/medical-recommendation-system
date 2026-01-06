@@ -6,6 +6,6 @@ tensorflow>=2.14.0
 python-dotenv
 werkzeug
 geopy
-gunicorn
+gunicorn==23.0.0
 requests
-google-generativeai
+google-generativeai==0.8.6
