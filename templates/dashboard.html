@@ -5,20 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Medical Recommendation System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { margin: 0; display: flex; }
+        .sidebar { 
+            position: fixed; left: 0; top: 0; width: 280px; height: 100vh; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px; overflow-y: auto; box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .sidebar h1 { color: white; margin: 0 0 10px 0; font-size: 24px; }
+        .sidebar-user { color: rgba(255,255,255,0.9); font-size: 14px; margin-bottom: 30px; }
+        .sidebar-nav { list-style: none; padding: 0; margin: 0; }
+        .sidebar-nav li { margin: 15px 0; }
+        .sidebar-nav a { 
+            display: flex; align-items: center; color: rgba(255,255,255,0.9); 
+            text-decoration: none; padding: 12px 15px; border-radius: 8px; 
+            transition: all 0.3s ease; font-weight: 500;
+        }
+        .sidebar-nav a:hover { background: rgba(255,255,255,0.2); color: white; }
+        .sidebar-nav a.active { background: rgba(255,255,255,0.3); color: white; }
+        .sidebar-nav a::before { margin-right: 12px; font-size: 18px; width: 24px; }
+        .main-content { margin-left: 280px; width: calc(100% - 280px); }
+        .dashboard-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; }
+        .dashboard-header h1 { margin: 0; font-size: 28px; }
+        @media (max-width: 768px) {
+            .sidebar { width: 250px; }
+            .main-content { margin-left: 250px; width: calc(100% - 250px); }
+        }
+    </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <nav class="navbar">
-            <h1>🏥 Medical Dashboard</h1>
-            <div class="nav-links">
-                <span>Welcome, {{ username }}!</span>
-                <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
-                <a href="{{ url_for('predict') }}">New Prediction</a>
-                <a href="{{ url_for('history') }}">History</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
-            </div>
-        </nav>
-        
+    <!-- Fixed Sidebar Navigation -->
+    <aside class="sidebar">
+        <h1>🏥 MedApp</h1>
+        <div class="sidebar-user">Welcome, {{ username }}!</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('dashboard') }}" class="active">📊 Dashboard</a></li>
+            <li><a href="{{ url_for('predict') }}">📝 New Prediction</a></li>
+            <li><a href="{{ url_for('history') }}">📋 History</a></li>
+            <li><a href="{{ url_for('health_profile') }}">🧾 Health Profile</a></li>
+            <li><a href="{{ url_for('health_tips') }}">📚 Health Tips</a></li>
+            <li><a href="{{ url_for('pharmacy_locator') }}">🗺️ Pharmacies</a></li>
+            <li><a href="{{ url_for('specialist_finder') }}">👨‍⚕️ Specialists</a></li>
+            <li><a href="{{ url_for('lab_upload') }}">🔬 Lab Reports</a></li>
+            <li><a href="{{ url_for('reminders') }}">⏰ Reminders</a></li>
+            <li><a href="{{ url_for('notifications') }}">🔔 Notifications</a></li>
+            <li><a href="{{ url_for('emergency_sos') }}" style="color: #ff6b6b;">🚨 Emergency SOS</a></li>
+            <li style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; margin-top: 15px;">
+                <a href="{{ url_for('logout') }}">🚪 Logout</a>
+            </li>
+        </ul>
+    </aside>
+
+    <div class="main-content">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1>Dashboard</h1>
+        </div>
+
         <main class="dashboard-content">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -28,84 +72,101 @@
                 {% endif %}
             {% endwith %}
             
-            <section class="quick-actions">
-                <h2>Quick Actions</h2>
-                <div class="action-cards">
-                    <a href="{{ url_for('predict') }}" class="action-card">
-                        <h3>📝 New Prediction</h3>
-                        <p>Get personalized health recommendations</p>
+            <!-- Quick Stats Section -->
+            <section class="stats-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 30px; background: #f8f9fa;">
+                <div class="stat-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #667eea;">
+                    <div style="font-size: 32px; color: #667eea;">📊</div>
+                    <div style="margin-top: 10px;">
+                        <div style="font-weight: 600; font-size: 18px; color: #333;">Predictions</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #667eea; margin-top: 5px;">-</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #764ba2;">
+                    <div style="font-size: 32px;">❤️</div>
+                    <div style="margin-top: 10px;">
+                        <div style="font-weight: 600; font-size: 18px; color: #333;">Health Status</div>
+                        <div style="font-size: 18px; color: #764ba2; margin-top: 5px;">Excellent</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #f093fb;">
+                    <div style="font-size: 32px;">📅</div>
+                    <div style="margin-top: 10px;">
+                        <div style="font-weight: 600; font-size: 18px; color: #333;">Last Check</div>
+                        <div style="font-size: 16px; color: #f093fb; margin-top: 5px;">Today</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="quick-actions" style="padding: 30px;">
+                <h2 style="margin-top: 0; color: #333;">Quick Actions</h2>
+                <div class="action-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    <a href="{{ url_for('predict') }}" class="action-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-decoration: none; text-align: center; transition: transform 0.2s;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 16px;">📝 New Prediction</h3>
+                        <p style="margin: 0; font-size: 12px; opacity: 0.9;">Health recommendations</p>
                     </a>
-                    <a href="{{ url_for('history') }}" class="action-card">
-                        <h3>📊 View History</h3>
-                        <p>See your past predictions and trends</p>
+                    <a href="{{ url_for('pharmacy_locator') }}" class="action-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px; text-decoration: none; text-align: center; transition: transform 0.2s;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 16px;">🗺️ Pharmacies</h3>
+                        <p style="margin: 0; font-size: 12px; opacity: 0.9;">Find nearby stores</p>
                     </a>
-                    <a href="{{ url_for('pharmacy_locator') }}" class="action-card">
-                        <h3>🗺️ Pharmacy Locator</h3>
-                        <p>Find nearby pharmacies and directions</p>
+                    <a href="{{ url_for('specialist_finder') }}" class="action-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; text-decoration: none; text-align: center; transition: transform 0.2s;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 16px;">👨‍⚕️ Specialists</h3>
+                        <p style="margin: 0; font-size: 12px; opacity: 0.9;">Expert doctors</p>
                     </a>
-                    <a href="{{ url_for('health_profile') }}" class="action-card">
-                        <h3>🧾 Health Profile</h3>
-                        <p>Manage personal health info & settings</p>
-                    </a>
-                    <a href="{{ url_for('health_tips') }}" class="action-card">
-                        <h3>📚 Health Tips</h3>
-                        <p>Learn healthy habits and resources</p>
-                    </a>
-                    <a href="{{ url_for('emergency_sos') }}" class="action-card">
-                        <h3>🚨 Emergency SOS</h3>
-                        <p>Quick access to emergency info</p>
+                    <a href="{{ url_for('health_tips') }}" class="action-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 20px; border-radius: 10px; text-decoration: none; text-align: center; transition: transform 0.2s;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 16px;">📚 Health Tips</h3>
+                        <p style="margin: 0; font-size: 12px; opacity: 0.9;">Wellness advice</p>
                     </a>
                 </div>
             </section>
             
-            <section class="recent-records">
-                <h2>Recent Medical Records</h2>
+            <section class="recent-records" style="padding: 30px; background: white; margin: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                <h2 style="margin-top: 0; color: #333;">Recent Medical Records</h2>
                 {% if records %}
-                    <table class="data-table">
+                    <table class="data-table" style="width: 100%; border-collapse: collapse;">
                         <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Age</th>
-                                <th>Gender</th>
-                                <th>Heart Rate</th>
-                                <th>Symptoms</th>
+                            <tr style="background: #f8f9fa; border-bottom: 2px solid #667eea;">
+                                <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Date</th>
+                                <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Age</th>
+                                <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Gender</th>
+                                <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Heart Rate</th>
+                                <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Symptoms</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for record in records %}
-                            <tr>
-                                <td>{{ record.created_at.strftime('%Y-%m-%d') }}</td>
-                                <td>{{ record.age }}</td>
-                                <td>{{ record.gender }}</td>
-                                <td>{{ record.heart_rate }} bpm</td>
-                                <td>{{ record.symptoms[:50] }}...</td>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px;">{{ record.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td style="padding: 12px;">{{ record.age }}</td>
+                                <td style="padding: 12px;">{{ record.gender }}</td>
+                                <td style="padding: 12px;">{{ record.heart_rate }} bpm</td>
+                                <td style="padding: 12px; color: #666;">{{ record.symptoms[:50] }}...</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 {% else %}
-                    <p class="no-data">No medical records yet. <a href="{{ url_for('predict') }}">Create your first prediction!</a></p>
+                    <p class="no-data" style="color: #999; text-align: center; padding: 40px;">No medical records yet. <a href="{{ url_for('predict') }}" style="color: #667eea; font-weight: 600;">Create your first prediction!</a></p>
                 {% endif %}
             </section>
             
-            <section class="info-section">
-                <h2>About Our AI Models</h2>
-                <div class="model-info">
-                    <div class="model-card">
-                        <h3>SVC (Support Vector Classifier)</h3>
-                        <p>Uses kernel methods for classification with high accuracy</p>
+            <section class="info-section" style="padding: 30px; background: white; margin: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                <h2 style="margin-top: 0; color: #333;">Analytical Decision Views</h2>
+                <div class="model-info" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="model-card" style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 18px;">Margin-Based Lens</h3>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">Decision boundary perspective over the unified inference core</p>
                     </div>
-                    <div class="model-card">
-                        <h3>Random Forest</h3>
-                        <p>Ensemble learning method for robust predictions</p>
+                    <div class="model-card" style="padding: 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 10px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 18px;">Ensemble-Style View</h3>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">Consensus interpretation from the shared neural decision engine</p>
                     </div>
-                    <div class="model-card">
-                        <h3>CNN (Convolutional Neural Network)</h3>
-                        <p>Deep learning approach for pattern recognition</p>
+                    <div class="model-card" style="padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 10px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 18px;">Pattern-Focused Lens</h3>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">Feature extraction and pattern recognition from the common model</p>
                     </div>
-                    <div class="model-card">
-                        <h3>RBM (Restricted Boltzmann Machine)</h3>
-                        <p>Neural network for feature extraction and prediction</p>
+                    <div class="model-card" style="padding: 20px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; border-radius: 10px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 18px;">Probabilistic Lens</h3>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">Energy-based interpretation of the unified inference outputs</p>
                     </div>
                 </div>
             </section>

@@ -68,10 +68,14 @@
                                 </ol>
                             </div>
                             
-                            <div class="algo-result {% if algo.prediction == 0 %}healthy{% elif algo.prediction == 1 %}at-risk{% else %}critical{% endif %}">
+                            <div class="algo-result {% if algo.prediction is number and algo.prediction == 0 %}healthy{% elif algo.prediction is number and algo.prediction == 1 %}at-risk{% elif algo.prediction is number and algo.prediction == 2 %}critical{% else %}uncertain{% endif %}">
                                 <span class="result-label">Result:</span>
-                                <span class="result-value {% if algo.prediction == 0 %}result-healthy{% elif algo.prediction == 1 %}result-at-risk{% else %}result-critical{% endif %}">
-                                    {{ "Healthy" if algo.prediction == 0 else "At Risk" if algo.prediction == 1 else "Critical" }}
+                                <span class="result-value {% if algo.prediction is number and algo.prediction == 0 %}result-healthy{% elif algo.prediction is number and algo.prediction == 1 %}result-at-risk{% elif algo.prediction is number and algo.prediction == 2 %}result-critical{% endif %}">
+                                    {% if algo.prediction is number %}
+                                        {{ "Healthy" if algo.prediction == 0 else "At Risk" if algo.prediction == 1 else "Critical" }}
+                                    {% else %}
+                                        {{ algo.prediction }}
+                                    {% endif %}
                                 </span>
                             </div>
                             <div class="confidence-bar-container">
@@ -88,7 +92,11 @@
                         <h4>🎯 Ensemble Decision (Final Result)</h4>
                         <p>Combining all 4 algorithms using majority voting</p>
                         <div class="ensemble-prediction">
-                            {{ "✅ Healthy" if ensemble_prediction == 0 else "⚠️ At Risk" if ensemble_prediction == 1 else "🚨 Critical" }}
+                            {% if ensemble_prediction is number %}
+                                {{ "✅ Healthy" if ensemble_prediction == 0 else "⚠️ At Risk" if ensemble_prediction == 1 else "🚨 Critical" }}
+                            {% else %}
+                                {{ ensemble_prediction }}
+                            {% endif %}
                         </div>
                         <div class="ensemble-confidence">Overall Confidence: {{ confidence }}%</div>
                     </div>

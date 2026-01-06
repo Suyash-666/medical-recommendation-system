@@ -32,20 +32,20 @@ def init_firebase():
         try:
             decoded = base64.b64decode(b64).decode('utf-8')
             cred_dict = json.loads(decoded)
-            print("✓ Firebase credentials loaded from FIREBASE_CREDENTIALS_B64")
+            print("[OK] Firebase credentials loaded from FIREBASE_CREDENTIALS_B64")
         except Exception as e:
             raise RuntimeError(f"Invalid FIREBASE_CREDENTIALS_B64: {e}")
     elif raw:
         try:
             cred_dict = json.loads(raw)
-            print("✓ Firebase credentials loaded from FIREBASE_CREDENTIALS")
+            print("[OK] Firebase credentials loaded from FIREBASE_CREDENTIALS")
         except Exception as e:
             raise RuntimeError(f"Invalid FIREBASE_CREDENTIALS JSON: {e}")
     elif os.path.exists(path):
         try:
-            with open(path,'r',encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 cred_dict = json.load(f)
-            print("✓ Firebase credentials loaded from firebase-credentials.json")
+            print("[OK] Firebase credentials loaded from firebase-credentials.json")
         except Exception as e:
             raise RuntimeError(f"Failed reading firebase-credentials.json: {e}")
     else:

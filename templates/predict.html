@@ -23,39 +23,56 @@
                 <h2>Get Medical Prediction</h2>
                 <p class="subtitle">Enter your health data to receive personalized recommendations</p>
                 
-                <form method="POST" action="{{ url_for('predict') }}" class="predict-form">
+                <!-- Loading Spinner (hidden by default) -->
+                <div id="loadingSpinner" style="display: none; text-align: center; padding: 40px;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+                    <p style="font-size: 18px; color: #666;">Analyzing your health data with AI models...</p>
+                    <p style="font-size: 14px; color: #999;">This may take a few seconds</p>
+                </div>
+                
+                <form method="POST" action="{{ url_for('predict') }}" class="predict-form" id="predictForm">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="age">Age *</label>
-                            <input type="number" id="age" name="age" min="1" max="120" required>
+                            <input type="number" id="age" name="age" min="1" max="120" required value="{{ age or '' }}">
                         </div>
                         
                         <div class="form-group">
                             <label for="gender">Gender *</label>
                             <select id="gender" name="gender" required>
                                 <option value="">Select...</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
+                                <option value="Male" {% if gender == 'Male' %}selected{% endif %}>Male</option>
+                                <option value="Female" {% if gender == 'Female' %}selected{% endif %}>Female</option>
+                                <option value="Other" {% if gender == 'Other' %}selected{% endif %}>Other</option>
                             </select>
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label for="heart_rate">Heart Rate (bpm) *</label>
-                        <input type="number" id="heart_rate" name="heart_rate" min="40" max="200" required>
+                        <input type="number" id="heart_rate" name="heart_rate" min="40" max="200" required value="{{ heart_rate or '' }}">
                         <small>Normal: 60-100 bpm</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="symptoms">Symptoms *</label>
-                        <textarea id="symptoms" name="symptoms" rows="4" placeholder="Describe your symptoms in detail (e.g., vomiting, fever, stomach pain)..." required></textarea>
+                        <textarea id="symptoms" name="symptoms" rows="4" placeholder="Describe your symptoms in detail (e.g., vomiting, fever, stomach pain)..." required>{{ symptoms or '' }}</textarea>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary btn-block">Get Prediction</button>
+                    <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Get Prediction</button>
                 </form>
             </div>
         </main>
     </div>
+
+    <script>
+        document.getElementById('predictForm').addEventListener('submit', function(e) {
+            // Don't prevent default - let the form submit normally
+            // But show the loading spinner
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('predictForm').style.display = 'none';
+            document.getElementById('submitBtn').disabled = true;
+        });
+    </script>
 </body>
 </html>
