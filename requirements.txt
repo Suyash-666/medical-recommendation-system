@@ -8,3 +8,4 @@ werkzeug
 geopy
 gunicorn
 requests
+google-generativeai
