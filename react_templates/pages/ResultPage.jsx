@@ -15,6 +15,15 @@ export default function ResultPage({
   medications = [],
   diet = [],
 }) {
+  const isRisk = (() => {
+    if (typeof ensemble_prediction === 'number') return ensemble_prediction > 0;
+    const label = String(ensemble_prediction || '').toLowerCase();
+    if (!label) return false;
+    if (label.includes('healthy')) return false;
+    if (label.includes('at risk') || label.includes('critical') || label.includes('risk') || label.includes('uncertain')) return true;
+    return false;
+  })();
+
   return (
     <div className="dashboard-container">
       <NavBar title="Prediction Result" />
@@ -49,7 +58,22 @@ export default function ResultPage({
             <div className="ensemble-result">
               <h4>🎯 Ensemble Decision (Final Result)</h4>
               <div className="ensemble-prediction">{String(ensemble_prediction)}</div>
-              <div className="ensemble-confidence">Overall Confidence: {confidence}%</div>
+              <div className="ensemble-confidence" style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <span>Overall Confidence: {confidence}%</span>
+                <span
+                  style={{
+                    background: isRisk ? '#ffebee' : '#e8f5e9',
+                    color: isRisk ? '#c62828' : '#2e7d32',
+                    border: `1px solid ${isRisk ? '#ef9a9a' : '#a5d6a7'}`,
+                    padding: '4px 10px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  {isRisk ? '🔴 ALERT: RISK DETECTED' : '🟢 SAFE: LOW RISK'}
+                </span>
+              </div>
             </div>
           </div>
 

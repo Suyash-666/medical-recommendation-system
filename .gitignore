@@ -66,3 +66,6 @@ api/
 .pytest_cache/
 .coverage
 htmlcov/
+.venv/
+.venv310/
+*.pyc

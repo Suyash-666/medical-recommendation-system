@@ -24,10 +24,14 @@ export default function PredictPage({ onSubmit }) {
           {!loading && (
             <form
               className="predict-form"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 setLoading(true);
-                onSubmit?.(form);
+                try {
+                  await onSubmit?.(form);
+                } finally {
+                  setLoading(false);
+                }
               }}
             >
               <div className="form-row">

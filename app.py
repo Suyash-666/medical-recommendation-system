@@ -132,6 +132,12 @@ def search_pharmacies_api():
         lat = float(data.get('lat'))
         lon = float(data.get('lon'))
         radius_m = int(data.get('radius', 15000))  # Default 15km
+
+        if lat < -90 or lat > 90 or lon < -180 or lon > 180:
+            return {'success': False, 'error': 'Invalid latitude/longitude', 'pharmacies': []}, 400
+
+        # Keep radius reasonable for API reliability and quotas
+        radius_m = max(500, min(radius_m, 50000))
         
         pharmacies = []
         
@@ -162,7 +168,7 @@ def search_pharmacies_api():
             queries = [
                 f'[out:json][timeout:20];(node["amenity"="pharmacy"](around:{radius_m},{lat},{lon});way["amenity"="pharmacy"](around:{radius_m},{lat},{lon}););out center tags;',
                 f'[out:json][timeout:20];(node["amenity"~"chemist|clinic|medical|hospital"](around:{int(radius_m*1.5)},{lat},{lon});way["amenity"~"chemist|clinic|medical|hospital"](around:{int(radius_m*1.5)},{lat},{lon}););out center tags limit 50;',
-                f'[out:json][timeout:20];(node["shop"="chemist|medical"](around:{int(radius_m*1.5)},{lat},{lon});way["shop"="chemist|medical"](around:{int(radius_m*1.5)},{lat},{lon}););out center tags limit 50;'
+                f'[out:json][timeout:20];(node["shop"~"chemist|medical|pharmacy"](around:{int(radius_m*1.5)},{lat},{lon});way["shop"~"chemist|medical|pharmacy"](around:{int(radius_m*1.5)},{lat},{lon}););out center tags limit 50;'
             ]
             
             for query in queries:
@@ -203,7 +209,7 @@ def search_pharmacies_api():
             try:
                 wikidata_pharmacies = _get_pharmacies_from_wikidata(lat, lon, radius_m)
                 for wp in wikidata_pharmacies:
-                    if not any(p['name'].lower() == wp['name'].lower() for p in pharmacies):
+                    if not any((p.get('name', '').lower() == wp.get('name', '').lower()) for p in pharmacies):
                         pharmacies.append(wp)
             except Exception as e:
                 print(f"WikiData error: {e}")
@@ -212,6 +218,8 @@ def search_pharmacies_api():
         if len(pharmacies) == 0:
             print(f"[INFO] No pharmacies found. Consider expanding search radius or trying a different location.")
         
+        pharmacies = [p for p in pharmacies if p.get('lat') is not None and p.get('lon') is not None]
+
         return {
             'success': True,
             'count': len(pharmacies),
@@ -246,12 +254,40 @@ def _get_pharmacies_from_google_places(location_name, lat, lon, radius_m):
             'language': 'en'
         }
         
-        response = requests.get(nearby_search_url, params=params, timeout=10)
-        response.raise_for_status()
-        results = response.json().get('results', [])
+        all_results = []
+        next_page_token = None
+
+        for page_index in range(3):
+            page_params = dict(params)
+            if next_page_token:
+                # Google may require a short delay before next_page_token is valid
+                time.sleep(2)
+                page_params = {
+                    'pagetoken': next_page_token,
+                    'key': google_api_key,
+                    'language': 'en'
+                }
+
+            response = requests.get(nearby_search_url, params=page_params, timeout=10)
+            response.raise_for_status()
+            payload = response.json()
+            status = payload.get('status', 'UNKNOWN')
+
+            if status not in ('OK', 'ZERO_RESULTS'):
+                print(f"Google Places nearby search status: {status}; message: {payload.get('error_message', 'N/A')}")
+                break
+
+            page_results = payload.get('results', [])
+            all_results.extend(page_results)
+
+            next_page_token = payload.get('next_page_token')
+            if not next_page_token:
+                break
+
+        results = all_results
         
         pharmacies = []
-        for place in results:
+        for place in results[:45]:
             # Get detailed information for each place
             place_details = _get_place_details(place.get('place_id'), google_api_key)
             
@@ -282,6 +318,8 @@ def _get_place_details(place_id, api_key):
     """Get detailed information for a specific place using Google Places Details API."""
     try:
         import requests
+        if not place_id:
+            return {'phone': 'N/A', 'address': 'N/A', 'opening_hours': 'N/A'}
         place_details_url = 'https://maps.googleapis.com/maps/api/place/details/json'
         
         params = {
@@ -293,7 +331,13 @@ def _get_place_details(place_id, api_key):
         
         response = requests.get(place_details_url, params=params, timeout=10)
         response.raise_for_status()
-        result = response.json().get('result', {})
+        payload = response.json()
+        status = payload.get('status', 'UNKNOWN')
+        if status not in ('OK', 'ZERO_RESULTS'):
+            print(f"Place details status: {status}; message: {payload.get('error_message', 'N/A')}")
+            return {'phone': 'N/A', 'address': 'N/A', 'opening_hours': 'N/A'}
+
+        result = payload.get('result', {})
         
         opening_hours = 'N/A'
         if result.get('opening_hours'):

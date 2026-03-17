@@ -90,11 +90,15 @@ function PredictRoute() {
 }
 
 function ResultRoute() {
-  const [result, setResult] = useState(null);
-  useEffect(() => {
+  const [result] = useState(() => {
     const raw = sessionStorage.getItem('lastPrediction');
-    if (raw) setResult(JSON.parse(raw));
-  }, []);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  });
   if (!result) return <Navigate to="/predict" replace />;
   return <ResultPage {...result} />;
 }
