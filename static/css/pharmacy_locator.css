@@ -1,29 +1,382 @@
+/* Pharmacy Locator - Modern Design System */
+
 #map { 
-    height: 420px; 
+    height: 480px; 
     width: 100%; 
-    border-radius: 8px; 
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: 2px solid var(--light-gray);
+    overflow: hidden;
 }
 
-.results-list { 
-    margin-top: 15px; 
+.map-container {
+    margin-bottom: var(--space-xl);
+    position: relative;
 }
 
-.result-item { 
-    background: white; 
-    border: 1px solid #e0e0e0; 
-    border-radius: 8px; 
-    padding: 12px; 
-    margin-bottom: 10px; 
+.map-container::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    background: linear-gradient(135deg, var(--primary-light), var(--accent-teal));
+    border-radius: var(--radius-lg);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity var(--transition-base);
 }
 
+.map-container:hover::before {
+    opacity: 0.3;
+}
+
+/* Controls Section */
 .controls { 
     display: flex; 
-    gap: 10px; 
+    gap: var(--space-md);
     flex-wrap: wrap; 
-    margin-bottom: 12px; 
+    margin-bottom: var(--space-lg);
+    background: var(--white);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--light-gray);
+    box-shadow: var(--shadow-sm);
 }
 
 .controls input, 
 .controls select { 
-    min-width: 180px; 
+    min-width: 200px;
+    flex: 1;
+}
+
+.controls label {
+    display: block;
+    margin-bottom: var(--space-sm);
+    color: var(--dark-gray);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Results List */
+.results-list { 
+    margin-top: var(--space-xl);
+}
+
+.results-header {
+    background: var(--white);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-lg);
+    border: 1px solid var(--light-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+
+.results-header h3 {
+    font-family: var(--font-display);
+    color: var(--primary-blue);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.results-count {
+    background: linear-gradient(135deg, var(--primary-light), var(--accent-teal));
+    color: var(--white);
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+/* Result Item */
+.result-item { 
+    background: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-md);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.result-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--primary-light), var(--accent-teal));
+    transform: scaleY(0);
+    transition: transform var(--transition-base);
+}
+
+.result-item:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-lighter);
+}
+
+.result-item:hover::before {
+    transform: scaleY(1);
+}
+
+.result-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: var(--space-md);
+    gap: var(--space-md);
+}
+
+.pharmacy-name {
+    font-family: var(--font-display);
+    color: var(--primary-blue);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 var(--space-xs) 0;
+}
+
+.pharmacy-distance {
+    background: var(--off-white);
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary-blue);
+    white-space: nowrap;
+}
+
+.pharmacy-address {
+    color: var(--dark-gray);
+    margin-bottom: var(--space-md);
+    line-height: 1.6;
+}
+
+.pharmacy-address::before {
+    content: '📍';
+    margin-right: var(--space-sm);
+}
+
+.pharmacy-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--light-gray);
+}
+
+.pharmacy-detail {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: var(--dark-gray);
+    font-size: 0.9375rem;
+}
+
+.pharmacy-detail-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--off-white);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+}
+
+.pharmacy-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+    flex-wrap: wrap;
+}
+
+.btn-directions,
+.btn-call,
+.btn-view {
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    border: none;
+    font-family: var(--font-body);
+}
+
+.btn-directions {
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-light));
+    color: var(--white);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-directions:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-call {
+    background: var(--white);
+    color: var(--success-green);
+    border: 2px solid var(--success-green);
+}
+
+.btn-call:hover {
+    background: var(--success-green);
+    color: var(--white);
+}
+
+.btn-view {
+    background: var(--off-white);
+    color: var(--primary-blue);
+    border: 2px solid var(--light-gray);
+}
+
+.btn-view:hover {
+    background: var(--primary-blue);
+    color: var(--white);
+    border-color: var(--primary-blue);
+}
+
+/* Open/Closed Status */
+.status-open {
+    color: var(--success-green);
+    font-weight: 700;
+}
+
+.status-open::before {
+    content: '●';
+    margin-right: var(--space-xs);
+}
+
+.status-closed {
+    color: var(--danger-red);
+    font-weight: 700;
+}
+
+.status-closed::before {
+    content: '●';
+    margin-right: var(--space-xs);
+}
+
+/* Loading State */
+.loading-spinner {
+    text-align: center;
+    padding: var(--space-3xl);
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--light-gray);
+    border-top-color: var(--primary-light);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto var(--space-lg);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* No Results */
+.no-results {
+    text-align: center;
+    padding: var(--space-3xl);
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--light-gray);
+}
+
+.no-results::before {
+    content: '🏥';
+    font-size: 4rem;
+    display: block;
+    margin-bottom: var(--space-lg);
+    opacity: 0.5;
+}
+
+.no-results h3 {
+    font-family: var(--font-display);
+    color: var(--dark-gray);
+    margin-bottom: var(--space-md);
+}
+
+.no-results p {
+    color: var(--dark-gray);
+    opacity: 0.7;
+}
+
+/* Filter Pills */
+.filter-pills {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-lg);
+}
+
+.filter-pill {
+    background: var(--off-white);
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-full);
+    border: 2px solid var(--light-gray);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-pill:hover,
+.filter-pill.active {
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-light));
+    color: var(--white);
+    border-color: var(--primary-blue);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #map {
+        height: 350px;
+    }
+    
+    .controls {
+        flex-direction: column;
+    }
+    
+    .controls input,
+    .controls select {
+        width: 100%;
+        min-width: 100%;
+    }
+    
+    .pharmacy-actions {
+        flex-direction: column;
+    }
+    
+    .btn-directions,
+    .btn-call,
+    .btn-view {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .result-item-header {
+        flex-direction: column;
+    }
 }

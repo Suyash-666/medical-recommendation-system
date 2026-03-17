@@ -2,7 +2,7 @@
 Medical Recommendation System - Flask Web Application
 Main application with essential routes for landing, auth, dashboard, and predictions
 """
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, request, redirect, url_for, session, flash, jsonify, send_from_directory
 import re
 import time
 import json
@@ -21,6 +21,8 @@ os.environ.setdefault('CUDA_VISIBLE_DEVICES', '-1')
 from models.medical_models_simple import MedicalPredictor
 
 app = Flask(__name__)
+
+FRONTEND_DIST_DIR = os.path.join(app.root_path, 'frontend', 'dist')
 
 # Load environment variables from .env (local dev) if present
 load_dotenv()
@@ -73,17 +75,47 @@ def get_db_connection():
     """Get Firestore database connection (raises if unavailable)."""
     return get_db()
 
+
+def serve_react_app():
+    """Serve React SPA entry point."""
+    index_path = os.path.join(FRONTEND_DIST_DIR, 'index.html')
+    if os.path.exists(index_path):
+        return send_from_directory(FRONTEND_DIST_DIR, 'index.html')
+    return {
+        'success': False,
+        'error': 'React build not found. Run: npm install && npm run build in /frontend'
+    }, 503
+
+
+def wants_json_response():
+    accept = request.headers.get('Accept', '')
+    return request.is_json or 'application/json' in accept or request.path.startswith('/api/')
+
+
+def serialize_record(record):
+    out = dict(record)
+    created_at = out.get('created_at')
+    if isinstance(created_at, datetime):
+        out['created_at'] = created_at.isoformat()
+    return out
+
+
+@app.route('/assets/<path:filename>')
+def serve_frontend_assets(filename):
+    assets_dir = os.path.join(FRONTEND_DIST_DIR, 'assets')
+    return send_from_directory(assets_dir, filename)
+
 @app.route('/')
 def landing():
     """Landing page route"""
-    return render_template('landing.html')
+    return serve_react_app()
 
 @app.route('/pharmacy-locator')
 def pharmacy_locator():
     """Pharmacy locator page (uses client-side map + Overpass API)."""
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('pharmacy_locator.html')
+    return serve_react_app()
 
 @app.route('/api/search-pharmacies', methods=['POST'])
 def search_pharmacies_api():
@@ -360,7 +392,7 @@ def health_profile():
         db.collection('users').document(session['user_id']).set(data, merge=True)
         flash('Health profile updated', 'success')
         return redirect(url_for('health_profile'))
-    return render_template('health_profile.html', user=user)
+    return serve_react_app()
 
 @app.route('/health-tips')
 def health_tips():
@@ -379,8 +411,7 @@ def health_tips():
         pass
     
     # AI-generated personalized health tips
-    tips = _generate_health_tips_with_ai(user_profile)
-    return render_template('health_tips.html', tips=tips)
+    return serve_react_app()
 
 @app.route('/emergency-sos', methods=['GET', 'POST'])
 def emergency_sos():
@@ -398,7 +429,7 @@ def emergency_sos():
         db.collection('users').document(session['user_id']).set(sos, merge=True)
         flash('Emergency info updated', 'success')
         return redirect(url_for('emergency_sos'))
-    return render_template('emergency_sos.html', user=user)
+    return serve_react_app()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -425,7 +456,7 @@ def login():
         except Exception as e:
             flash(f'Auth error: {e}', 'error')
     
-    return render_template('login.html')
+    return serve_react_app()
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -441,7 +472,7 @@ def signup():
             existing = users_ref.where('username', '==', username).limit(1).stream()
             if any(existing):
                 flash('Username already exists', 'error')
-                return render_template('signup.html')
+                return serve_react_app()
             user_data = {
                 'username': username,
                 'email': email,
@@ -454,7 +485,7 @@ def signup():
         except Exception as e:
             flash(f'Signup error: {e}', 'error')
     
-    return render_template('signup.html')
+    return serve_react_app()
 
 @app.route('/dashboard')
 def dashboard():
@@ -495,7 +526,7 @@ def dashboard():
                 pass
         else:
             flash(f"Record fetch error: {e}", 'error')
-    return render_template('dashboard.html', username=session['username'], records=recent_records)
+    return serve_react_app()
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
@@ -521,24 +552,23 @@ def predict():
                 # Validate inputs
                 if not age or age < 1 or age > 120:
                     flash('Please enter a valid age (1-120)', 'error')
-                    return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+                    return serve_react_app()
                 
                 if not gender:
                     flash('Please select a gender', 'error')
-                    return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+                    return serve_react_app()
                 
                 if not heart_rate or heart_rate < 40 or heart_rate > 200:
                     flash('Please enter a valid heart rate (40-200 bpm)', 'error')
-                    return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+                    return serve_react_app()
                 
                 if not symptoms:
                     flash('Please describe your symptoms', 'error')
-                    return render_template('predict.html', age=age, gender=gender, heart_rate=heart_rate, symptoms=symptoms)
+                    return serve_react_app()
             
             except ValueError as e:
                 flash('Please enter valid numbers for age and heart rate', 'error')
-                return render_template('predict.html', age=request.form.get('age'), gender=request.form.get('gender'), 
-                                     heart_rate=request.form.get('heart_rate'), symptoms=request.form.get('symptoms'))
+                return serve_react_app()
             
             # Debug output
             print(f"\n[DEBUG] DEBUG - Received form data:")
@@ -576,7 +606,7 @@ def predict():
             error_message = str(e)
             print(f"\n[ERROR] PREDICTION FAILED: {error_message}\n")
             flash(f"AI Service Error: {error_message}. Please try again.", 'error')
-            return render_template('predict.html', age=request.form.get('age'), gender=request.form.get('gender'), heart_rate=request.form.get('heart_rate'), symptoms=request.form.get('symptoms'))
+            return serve_react_app()
         # Save to database
         try:
             db = get_db_connection()
@@ -604,25 +634,17 @@ def predict():
             print(f"[WARN] Save to database failed: {e}")
             flash(f"Warning: Prediction generated but couldn't save to history: {e}", 'warning')
         
-        return render_template('result.html', 
-                             prediction=recommendation_data['status'],
-                             confidence=round(confidence * 100, 2),
-                             description=recommendation_data['description'],
-                             precautions=recommendation_data['precautions'],
-                             medications=recommendation_data['medications'],
-                             diet=recommendation_data['diet'],
-                             disease=recommendation_data.get('disease', 'General Health Assessment'),
-                             algorithm_analyses=algorithm_analyses,
-                             ensemble_prediction=prediction,
-                             age=age,
-                             gender=gender,
-                             heart_rate=heart_rate,
-                             symptoms=symptoms,
-                             user_age=age,
-                             user_heart_rate=heart_rate,
-                             user_symptoms=symptoms)
+        return serve_react_app()
     
-    return render_template('predict.html')
+    return serve_react_app()
+
+
+@app.route('/result')
+def result_page():
+    """React result page route."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return serve_react_app()
 
 @app.route('/history')
 def history():
@@ -679,7 +701,7 @@ def history():
                 pass
         else:
             flash(f"History fetch error: {e}", 'error')
-    return render_template('history.html', history=history_data)
+    return serve_react_app()
 
 @app.route('/specialist-finder', methods=['GET', 'POST'])
 def specialist_finder():
@@ -698,7 +720,7 @@ def specialist_finder():
         # AI-powered specialist recommendations
         specialists = _generate_specialists_with_ai(specialty, location, symptoms)
     
-    return render_template('specialist_finder.html', specialists=specialists, location=location)
+    return serve_react_app()
 
 @app.route('/lab-upload', methods=['GET', 'POST'])
 def lab_upload():
@@ -738,7 +760,7 @@ def lab_upload():
         except Exception as e:
             flash(f'Error uploading report: {e}', 'error')
     
-    return render_template('lab_upload.html')
+    return serve_react_app()
 
 @app.route('/lab-analysis/<report_id>')
 def lab_analysis(report_id):
@@ -759,7 +781,7 @@ def lab_analysis(report_id):
         # AI-powered lab report analysis
         analysis_data = _analyze_lab_report_with_ai(report)
         
-        return render_template('lab_analysis.html', **analysis_data)
+        return serve_react_app()
         
     except Exception as e:
         flash(f'Error loading analysis: {e}', 'error')
@@ -818,7 +840,7 @@ def reminders():
     except Exception as e:
         flash(f'Error loading reminders: {e}', 'error')
     
-    return render_template('reminders.html', reminders=reminders_list)
+    return serve_react_app()
 
 @app.route('/delete-reminder/<reminder_id>', methods=['POST'])
 def delete_reminder(reminder_id):
@@ -897,10 +919,7 @@ def notifications():
     end_idx = start_idx + per_page
     paginated_notifications = notifications_list[start_idx:end_idx]
     
-    return render_template('notifications.html', 
-                         notifications=paginated_notifications,
-                         current_page=page,
-                         total_pages=total_pages)
+    return serve_react_app()
 
 @app.route('/mark-notification-read/<notification_id>', methods=['POST'])
 def mark_notification_read(notification_id):
@@ -972,6 +991,431 @@ def logout():
     session.clear()
     flash('Logged out successfully', 'success')
     return redirect(url_for('landing'))
+
+
+# ==================== REACT API ROUTES ====================
+
+@app.route('/api/session')
+def api_session():
+    return jsonify({
+        'authenticated': 'user_id' in session,
+        'user_id': session.get('user_id'),
+        'username': session.get('username')
+    })
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json(silent=True) or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    try:
+        db = get_db_connection()
+        users_ref = db.collection('users')
+        query = users_ref.where('username', '==', username).limit(1)
+        users = query.stream()
+        user = None
+        for doc in users:
+            user = doc.to_dict()
+            user['id'] = doc.id
+            break
+        if user and check_password_hash(user['password'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            return jsonify({'success': True, 'message': 'Login successful'})
+        return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/signup', methods=['POST'])
+def api_signup():
+    data = request.get_json(silent=True) or {}
+    username = (data.get('username') or '').strip()
+    email = (data.get('email') or '').strip()
+    password = data.get('password') or ''
+    if not username or not email or not password:
+        return jsonify({'success': False, 'error': 'username, email and password are required'}), 400
+    try:
+        db = get_db_connection()
+        users_ref = db.collection('users')
+        existing = users_ref.where('username', '==', username).limit(1).stream()
+        if any(existing):
+            return jsonify({'success': False, 'error': 'Username already exists'}), 409
+        users_ref.add({
+            'username': username,
+            'email': email,
+            'password': generate_password_hash(password),
+            'created_at': datetime.now()
+        })
+        return jsonify({'success': True, 'message': 'Account created successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    session.clear()
+    return jsonify({'success': True})
+
+
+@app.route('/api/dashboard')
+def api_dashboard():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    recent_records = []
+    try:
+        db = get_db_connection()
+        docs = db.collection('medical_records').where('user_id', '==', session['user_id']).limit(10).stream()
+        for doc in docs:
+            record = doc.to_dict()
+            record['id'] = doc.id
+            recent_records.append(serialize_record(record))
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    return jsonify({'success': True, 'username': session.get('username'), 'records': recent_records})
+
+
+@app.route('/api/predict', methods=['POST'])
+def api_predict():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json(silent=True) or {}
+    try:
+        age = int(data.get('age', 0))
+        gender = (data.get('gender') or '').strip()
+        heart_rate = int(data.get('heart_rate', 0))
+        symptoms = (data.get('symptoms') or '').strip()
+        if age < 1 or age > 120:
+            return jsonify({'success': False, 'error': 'Please enter a valid age (1-120)'}), 400
+        if not gender:
+            return jsonify({'success': False, 'error': 'Please select a gender'}), 400
+        if heart_rate < 40 or heart_rate > 200:
+            return jsonify({'success': False, 'error': 'Please enter a valid heart rate (40-200 bpm)'}), 400
+        if not symptoms:
+            return jsonify({'success': False, 'error': 'Please describe your symptoms'}), 400
+
+        features = [age, heart_rate]
+        predictor = get_predictor()
+        pred_svc, conf_svc, cond_svc, analysis_svc = predictor.predict_svc(features, symptoms)
+        recommendation_data = predictor.get_recommendation(pred_svc, conf_svc, symptoms, list(set(cond_svc)))
+
+        record_id = None
+        try:
+            db = get_db_connection()
+            record_ref = db.collection('medical_records').add({
+                'user_id': session['user_id'],
+                'age': age,
+                'gender': gender,
+                'heart_rate': heart_rate,
+                'symptoms': symptoms,
+                'created_at': datetime.now()
+            })
+            record_id = record_ref[0].id
+            db.collection('recommendations').add({
+                'user_id': session['user_id'],
+                'record_id': record_id,
+                'model_used': 'TensorFlow SVC Emulation (single model)',
+                'prediction': recommendation_data['status'],
+                'confidence': conf_svc,
+                'recommendations': recommendation_data['diet'] + recommendation_data['precautions'],
+                'created_at': datetime.now()
+            })
+        except Exception as e:
+            print(f"[WARN] Save to database failed: {e}")
+
+        return jsonify({
+            'success': True,
+            'record_id': record_id,
+            'prediction': recommendation_data['status'],
+            'confidence': round(conf_svc * 100, 2),
+            'description': recommendation_data['description'],
+            'precautions': recommendation_data['precautions'],
+            'medications': recommendation_data['medications'],
+            'diet': recommendation_data['diet'],
+            'disease': recommendation_data.get('disease', 'General Health Assessment'),
+            'algorithm_analyses': [analysis_svc],
+            'ensemble_prediction': pred_svc,
+            'age': age,
+            'gender': gender,
+            'heart_rate': heart_rate,
+            'symptoms': symptoms
+        })
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Please enter valid numbers for age and heart rate'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/history')
+def api_history():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    history_data = []
+    try:
+        db = get_db_connection()
+        records = db.collection('medical_records').where('user_id', '==', session['user_id']).stream()
+        for record_doc in records:
+            record = record_doc.to_dict()
+            record['id'] = record_doc.id
+            rec_docs = db.collection('recommendations').where('record_id', '==', record_doc.id).limit(1).stream()
+            for rec_doc in rec_docs:
+                rec = rec_doc.to_dict()
+                record['model_used'] = rec.get('model_used')
+                record['prediction'] = rec.get('prediction')
+                record['confidence'] = rec.get('confidence')
+                break
+            history_data.append(serialize_record(record))
+        history_data.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        return jsonify({'success': True, 'history': history_data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/health-profile', methods=['GET', 'POST'])
+def api_health_profile():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    db = get_db_connection()
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        payload = {
+            'age': data.get('age'),
+            'blood_type': data.get('blood_type'),
+            'allergies': data.get('allergies'),
+            'conditions': data.get('conditions'),
+            'emergency_contact': data.get('emergency_contact'),
+        }
+        db.collection('users').document(session['user_id']).set(payload, merge=True)
+        return jsonify({'success': True, 'message': 'Health profile updated'})
+    user_doc = db.collection('users').document(session['user_id']).get()
+    user = user_doc.to_dict() if user_doc.exists else {}
+    return jsonify({'success': True, 'user': user})
+
+
+@app.route('/api/health-tips')
+def api_health_tips():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    user_profile = None
+    try:
+        db = get_db()
+        user_doc = db.collection('users').document(session['user_id']).get()
+        if user_doc.exists:
+            user_profile = user_doc.to_dict()
+    except Exception:
+        pass
+    return jsonify({'success': True, 'tips': _generate_health_tips_with_ai(user_profile)})
+
+
+@app.route('/api/emergency-sos', methods=['GET', 'POST'])
+def api_emergency_sos():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    db = get_db_connection()
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        db.collection('users').document(session['user_id']).set({
+            'sos_contacts': data.get('sos_contacts'),
+            'primary_hospital': data.get('primary_hospital')
+        }, merge=True)
+        return jsonify({'success': True, 'message': 'Emergency info updated'})
+    user_doc = db.collection('users').document(session['user_id']).get()
+    user = user_doc.to_dict() if user_doc.exists else {}
+    return jsonify({'success': True, 'user': user})
+
+
+@app.route('/api/specialist-finder', methods=['POST'])
+def api_specialist_finder():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json(silent=True) or {}
+    specialists = _generate_specialists_with_ai(
+        data.get('specialty', ''),
+        data.get('location', ''),
+        data.get('symptoms', ''),
+    )
+    return jsonify({'success': True, 'specialists': specialists, 'location': data.get('location', '')})
+
+
+@app.route('/api/lab-upload', methods=['POST'])
+def api_lab_upload():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json(silent=True) or {}
+    try:
+        db = get_db()
+        report_data = {
+            'user_id': session['user_id'],
+            'report_type': data.get('report_type'),
+            'test_date': data.get('test_date'),
+            'lab_name': data.get('lab_name'),
+            'notes': data.get('notes', ''),
+            'upload_date': datetime.now().isoformat(),
+            'status': 'analyzed'
+        }
+        report_ref = db.collection('lab_reports').add(report_data)
+        report_id = report_ref[1].id
+        return jsonify({'success': True, 'report_id': report_id})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/lab-analysis/<report_id>')
+def api_lab_analysis(report_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        db = get_db()
+        report_doc = db.collection('lab_reports').document(report_id).get()
+        if not report_doc.exists:
+            return jsonify({'success': False, 'error': 'Report not found'}), 404
+        report = report_doc.to_dict()
+        return jsonify({'success': True, **_analyze_lab_report_with_ai(report)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/reminders', methods=['GET', 'POST'])
+def api_reminders():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    db = get_db()
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        db.collection('reminders').add({
+            'user_id': session['user_id'],
+            'type': data.get('reminder_type'),
+            'title': data.get('title'),
+            'description': data.get('description', ''),
+            'date': data.get('reminder_date'),
+            'time': data.get('reminder_time'),
+            'frequency': data.get('frequency'),
+            'is_active': True,
+            'created_at': datetime.now().isoformat()
+        })
+        return jsonify({'success': True, 'message': 'Reminder added successfully'})
+
+    reminders_list = []
+    reminder_docs = db.collection('reminders').where('user_id', '==', session['user_id']).where('is_active', '==', True).stream()
+    now = datetime.now()
+    for doc in reminder_docs:
+        reminder = doc.to_dict()
+        reminder['id'] = doc.id
+        reminder_date = datetime.fromisoformat(f"{reminder['date']}T{reminder['time']}")
+        reminder['is_overdue'] = reminder_date < now
+        reminder['is_today'] = reminder_date.date() == now.date()
+        reminders_list.append(reminder)
+    reminders_list.sort(key=lambda x: f"{x['date']} {x['time']}")
+    return jsonify({'success': True, 'reminders': reminders_list})
+
+
+@app.route('/api/delete-reminder/<reminder_id>', methods=['POST'])
+def api_delete_reminder(reminder_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        db = get_db()
+        db.collection('reminders').document(reminder_id).update({'is_active': False})
+        return jsonify({'success': True, 'message': 'Reminder deleted successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/notifications')
+def api_notifications():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    filter_type = request.args.get('filter_type', 'all')
+    filter_status = request.args.get('filter_status', 'all')
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    notifications_list = []
+    try:
+        db = get_db()
+        query = db.collection('notifications').where('user_id', '==', session['user_id'])
+        if filter_status == 'unread':
+            query = query.where('is_read', '==', False)
+        elif filter_status == 'read':
+            query = query.where('is_read', '==', True)
+
+        for doc in query.stream():
+            notification = doc.to_dict()
+            notification['id'] = doc.id
+            if filter_type != 'all' and notification.get('type') != filter_type:
+                continue
+            notifications_list.append(notification)
+
+        notifications_list.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        if not notifications_list:
+            notifications_list = [{
+                'id': 'sample1',
+                'title': 'Welcome to Medical App!',
+                'message': 'Thank you for using our medical recommendation system.',
+                'type': 'reminder',
+                'priority': 'normal',
+                'is_read': False,
+                'date': datetime.now().strftime('%Y-%m-%d'),
+                'time': datetime.now().strftime('%H:%M')
+            }]
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+    total_pages = (len(notifications_list) + per_page - 1) // per_page
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    return jsonify({
+        'success': True,
+        'notifications': notifications_list[start_idx:end_idx],
+        'current_page': page,
+        'total_pages': total_pages
+    })
+
+
+@app.route('/api/mark-notification-read/<notification_id>', methods=['POST'])
+def api_mark_notification_read(notification_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    if notification_id.startswith('sample'):
+        return jsonify({'success': False, 'error': 'Sample notification cannot be modified'}), 400
+    try:
+        db = get_db()
+        db.collection('notifications').document(notification_id).update({'is_read': True})
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/delete-notification/<notification_id>', methods=['POST'])
+def api_delete_notification(notification_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    if notification_id.startswith('sample'):
+        return jsonify({'success': False, 'error': 'Sample notification cannot be deleted'}), 400
+    try:
+        db = get_db()
+        db.collection('notifications').document(notification_id).delete()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/mark-all-read', methods=['POST'])
+def api_mark_all_read():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        db = get_db()
+        query = db.collection('notifications').where('user_id', '==', session['user_id']).where('is_read', '==', False)
+        count = 0
+        for doc in query.stream():
+            if not doc.id.startswith('sample'):
+                db.collection('notifications').document(doc.id).update({'is_read': True})
+                count += 1
+        return jsonify({'success': True, 'updated': count})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 # ==================== AI HELPER FUNCTIONS ====================
 
